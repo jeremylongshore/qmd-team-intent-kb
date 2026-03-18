@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Core domain model with Zod schemas for MemoryCandidate, CuratedMemory, GovernancePolicy, SearchQuery/Result, and AuditEvent
+- Lifecycle state machine with transition validation (active, deprecated, superseded, archived)
+- Shared primitive types (UUID, SHA-256 hash, ISO datetime, Author, ContentMetadata)
+- 12 enum definitions covering memory source, trust level, category, and governance actions
+- SearchScope defaults to curated-only, enforcing governed search behavior
+- CuratedMemory refinement requiring supersession link when lifecycle is superseded
+- 225 schema tests covering valid/invalid inputs, defaults, and edge cases
 - Monorepo scaffolding with pnpm workspaces (apps/, packages/, kb-export/, tests/, scripts/, examples/)
 - Architecture documentation and system thesis (000-docs/001-repo-blueprint)
 - Security policy with project-specific threat model covering memory integrity, MCP risk, and tenant isolation

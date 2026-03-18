@@ -38,6 +38,7 @@
 ### AA — After Action & Review
 
 - `012-AA-AACR-initial-aar.md` — Phase 0 after action review
+- `013-AA-AACR-phase1-schema.md` — Phase 1 core schema after action review
 
 ## Chronological Listing
 
@@ -56,5 +57,6 @@
 | 010 | WA-WFLW | internal-claude-operations | Claude workflows            |
 | 011 | PM-RISK | risk-register              | Risk tracking               |
 | 012 | AA-AACR | initial-aar                | Phase 0 AAR                 |
+| 013 | AA-AACR | phase1-schema              | Phase 1 AAR                 |
 
-## Next Available Sequence: 013
+## Next Available Sequence: 014
