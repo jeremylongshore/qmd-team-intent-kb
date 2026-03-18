@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Release workflow with dispatch trigger, tag trigger, changelog validation, and placeholder detection
+- Security workflow with weekly npm audit, lockfile integrity check, and secret scanning
+- Nightly workflow with full validation, dependency audit, and outdated dependency check
+- Test artifact upload in CI workflow for post-run analysis
+- `build` script in root package.json (`tsc -b`)
+- Issue template config linking blank issues to GitHub Discussions
+- Branch protection checklist doc (016-OD-OPSM)
 - qmd adapter with curated-only default search, 5 collection types, and index isolation per tenant
 - Real qmd CLI integration with RealQmdExecutor and health check
 - Claude runtime capture layer with local JSONL spool, secret detection (11 patterns), and content redaction
