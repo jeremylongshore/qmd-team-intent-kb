@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- qmd adapter with curated-only default search, 5 collection types, and index isolation per tenant
+- Real qmd CLI integration with RealQmdExecutor and health check
 - Claude runtime capture layer with local JSONL spool, secret detection (11 patterns), and content redaction
 - Shared utilities: Result<T, E> type, SHA-256 content hashing, TeamKB path resolution
 - Shell hook templates and CLAUDE.md guidance block generators
