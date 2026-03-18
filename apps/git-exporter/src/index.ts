@@ -1,3 +1,11 @@
-// TODO: Git export mirror — publish curated knowledge to git repos (Phase 7)
-
-export const name = '@qmd-team-intent-kb/git-exporter';
+export type { ExportConfig, ExportResult, FrontmatterData, ExportChangeset } from './types.js';
+export { extractFrontmatter, renderFrontmatter } from './formatter/frontmatter.js';
+export { formatMemoryAsMarkdown, getFilename } from './formatter/markdown-formatter.js';
+export {
+  getDirectory,
+  getCategoryDirectory,
+  getRelativePath,
+} from './formatter/directory-mapper.js';
+export { detectChanges } from './diff/change-detector.js';
+export { writeFile, archiveFile, removeFile } from './writer/file-writer.js';
+export { runExport } from './exporter.js';
