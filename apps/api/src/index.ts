@@ -1,3 +1,9 @@
-// TODO: Control plane REST API — memory CRUD, search, governance (Phase 5)
-
-export const name = '@qmd-team-intent-kb/api';
+export { buildApp } from './app.js';
+export type { AppDependencies } from './app.js';
+export { loadConfig } from './config.js';
+export type { AppConfig } from './config.js';
+export { ApiError, notFound, badRequest, internalError } from './errors.js';
+export { CandidateService } from './services/candidate-service.js';
+export { MemoryService } from './services/memory-service.js';
+export { PolicyService } from './services/policy-service.js';
+export { HealthService } from './services/health-service.js';
