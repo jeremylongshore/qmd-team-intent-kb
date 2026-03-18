@@ -1,0 +1,7 @@
+dist/
+build/
+coverage/
+node_modules/
+pnpm-lock.yaml
+CHANGELOG.md
+*.tsbuildinfo

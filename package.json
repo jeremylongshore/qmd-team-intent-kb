@@ -1,0 +1,32 @@
+{
+  "name": "@qmd-team-intent-kb/root",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Governed team memory platform for Claude Code powered by qmd",
+  "author": "Jeremy Longshore",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ci": "vitest run --coverage",
+    "clean": "rm -rf node_modules dist coverage **/dist **/node_modules **/*.tsbuildinfo",
+    "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "eslint": "^9.20.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.24.0",
+    "vitest": "^3.0.0"
+  }
+}
