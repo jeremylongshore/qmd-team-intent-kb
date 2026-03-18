@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 0.1.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (skip tag creation)'
+        required: false
+        type: boolean
+        default: false
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Full validation
+        run: pnpm validate
+
+      - name: Build check
+        run: pnpm build
+
+      - name: Changelog has Unreleased section or version entry
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            if ! grep -q "\[${VERSION}\]" CHANGELOG.md && ! grep -q "\[Unreleased\]" CHANGELOG.md; then
+              echo "::error::CHANGELOG.md missing entry for version ${VERSION} or Unreleased section"
+              exit 1
+            fi
+          fi
+
+      - name: No TODO-only packages in release
+        run: |
+          for pkg in packages/*/src/index.ts apps/*/src/index.ts; do
+            if [ -f "$pkg" ]; then
+              LINE_COUNT=$(wc -l < "$pkg")
+              if [ "$LINE_COUNT" -le 3 ] && grep -q "TODO" "$pkg"; then
+                echo "::warning::${pkg} appears to be a placeholder — verify before release"
+              fi
+            fi
+          done

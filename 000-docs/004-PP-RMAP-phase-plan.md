@@ -56,7 +56,7 @@ The project is implemented in sequential phases, each building on the previous. 
 
 ## Phase 2 — Claude Runtime Capture
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
 **Scope**: Implement the capture layer that intercepts memory proposals from Claude Code sessions and spools them as structured candidates.
 
@@ -75,7 +75,7 @@ The project is implemented in sequential phases, each building on the previous. 
 
 ## Phase 3 — qmd Adapter and Local Edge Index
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
 **Scope**: Wrap qmd CLI for programmatic TypeScript access. Establish the search interface with curated-only default semantics.
 
