@@ -43,3 +43,8 @@ kb-export/live/
 *.tgz
 .cache/
 tmp/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
+.beads/.beads-credential-key

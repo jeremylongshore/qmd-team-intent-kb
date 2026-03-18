@@ -1,0 +1,16 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/common" },
+    { "path": "packages/schema" },
+    { "path": "packages/qmd-adapter" },
+    { "path": "packages/claude-runtime" },
+    { "path": "packages/policy-engine" },
+    { "path": "packages/repo-resolver" },
+    { "path": "apps/api" },
+    { "path": "apps/curator" },
+    { "path": "apps/edge-daemon" },
+    { "path": "apps/git-exporter" },
+    { "path": "apps/reporting" }
+  ]
+}
