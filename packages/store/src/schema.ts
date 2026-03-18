@@ -1,0 +1,100 @@
+/**
+ * SQL DDL statements for the store package.
+ * Each entry creates one table and its associated indexes idempotently.
+ */
+
+const CANDIDATES_DDL = `
+CREATE TABLE IF NOT EXISTS candidates (
+  id TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'inbox',
+  source TEXT NOT NULL,
+  content TEXT NOT NULL,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  trust_level TEXT NOT NULL DEFAULT 'medium',
+  author_json TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  pre_policy_flags_json TEXT NOT NULL DEFAULT '{}',
+  content_hash TEXT NOT NULL,
+  captured_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_candidates_tenant ON candidates(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_candidates_hash ON candidates(content_hash);
+`.trim();
+
+const CURATED_MEMORIES_DDL = `
+CREATE TABLE IF NOT EXISTS curated_memories (
+  id TEXT PRIMARY KEY,
+  candidate_id TEXT NOT NULL,
+  source TEXT NOT NULL,
+  content TEXT NOT NULL,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  trust_level TEXT NOT NULL,
+  sensitivity TEXT NOT NULL DEFAULT 'internal',
+  author_json TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  lifecycle TEXT NOT NULL DEFAULT 'active',
+  content_hash TEXT NOT NULL,
+  policy_evaluations_json TEXT NOT NULL DEFAULT '[]',
+  supersession_json TEXT,
+  promoted_at TEXT NOT NULL,
+  promoted_by_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS idx_memories_tenant ON curated_memories(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_memories_hash ON curated_memories(content_hash);
+CREATE INDEX IF NOT EXISTS idx_memories_lifecycle ON curated_memories(lifecycle);
+CREATE INDEX IF NOT EXISTS idx_memories_updated ON curated_memories(updated_at);
+`.trim();
+
+const GOVERNANCE_POLICIES_DDL = `
+CREATE TABLE IF NOT EXISTS governance_policies (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  rules_json TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  version INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_policies_tenant ON governance_policies(tenant_id);
+`.trim();
+
+const AUDIT_EVENTS_DDL = `
+CREATE TABLE IF NOT EXISTS audit_events (
+  id TEXT PRIMARY KEY,
+  action TEXT NOT NULL,
+  memory_id TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  actor_json TEXT NOT NULL,
+  reason TEXT,
+  details_json TEXT NOT NULL DEFAULT '{}',
+  timestamp TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_audit_memory ON audit_events(memory_id);
+CREATE INDEX IF NOT EXISTS idx_audit_tenant ON audit_events(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_events(action);
+`.trim();
+
+const EXPORT_STATE_DDL = `
+CREATE TABLE IF NOT EXISTS export_state (
+  target_id TEXT PRIMARY KEY,
+  last_exported_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`.trim();
+
+/** All DDL statements, each including the CREATE TABLE and its indexes as one string. */
+export const TABLE_DDL: string[] = [
+  CANDIDATES_DDL,
+  CURATED_MEMORIES_DDL,
+  GOVERNANCE_POLICIES_DDL,
+  AUDIT_EVENTS_DDL,
+  EXPORT_STATE_DDL,
+];
