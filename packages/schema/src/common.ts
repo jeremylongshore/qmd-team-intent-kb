@@ -17,8 +17,13 @@ export type IsoDatetime = z.infer<typeof IsoDatetime>;
 export const NonEmptyString = z.string().trim().min(1);
 export type NonEmptyString = z.infer<typeof NonEmptyString>;
 
-/** Semantic version string (e.g., 1.2.3) */
-export const SemVer = z.string().regex(/^\d+\.\d+\.\d+$/, 'Must be a valid semver string');
+/** Semantic version string — full SemVer 2.0.0 (e.g., 1.2.3, 1.0.0-alpha.1, 1.0.0+build.123) */
+export const SemVer = z
+  .string()
+  .regex(
+    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/,
+    'Must be a valid semver string',
+  );
 export type SemVer = z.infer<typeof SemVer>;
 
 /** Tag — lowercase alphanumeric with hyphens */

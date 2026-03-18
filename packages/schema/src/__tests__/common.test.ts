@@ -87,8 +87,17 @@ describe('SemVer', () => {
   it('rejects two-part versions', () => {
     expect(() => SemVer.parse('1.2')).toThrow();
   });
-  it('rejects prerelease suffixes', () => {
-    expect(() => SemVer.parse('1.2.3-alpha')).toThrow();
+  it('accepts prerelease identifiers', () => {
+    expect(SemVer.parse('1.2.3-alpha')).toBe('1.2.3-alpha');
+    expect(SemVer.parse('1.0.0-alpha.1')).toBe('1.0.0-alpha.1');
+    expect(SemVer.parse('1.0.0-0.3.7')).toBe('1.0.0-0.3.7');
+  });
+  it('accepts build metadata', () => {
+    expect(SemVer.parse('1.2.3+build.123')).toBe('1.2.3+build.123');
+    expect(SemVer.parse('1.0.0-alpha+001')).toBe('1.0.0-alpha+001');
+  });
+  it('rejects leading zeros in numeric identifiers', () => {
+    expect(() => SemVer.parse('01.2.3')).toThrow();
   });
 });
 
