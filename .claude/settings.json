@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "pnpm install",
+      "pnpm validate",
+      "pnpm lint",
+      "pnpm format",
+      "pnpm format:check",
+      "pnpm typecheck",
+      "pnpm test",
+      "pnpm clean",
+      "bd *",
+      "git *"
+    ]
+  }
+}

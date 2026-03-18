@@ -4,7 +4,7 @@
   "private": true,
   "description": "Governed team memory platform for Claude Code powered by qmd",
   "author": "Jeremy Longshore",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20"
   },
