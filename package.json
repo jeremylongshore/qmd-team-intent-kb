@@ -17,7 +17,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ci": "vitest run --coverage",
+    "test:ci": "vitest run",
     "clean": "rm -rf node_modules dist coverage **/dist **/node_modules **/*.tsbuildinfo",
     "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
   },
