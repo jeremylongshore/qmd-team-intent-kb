@@ -35,28 +35,37 @@
 
 - `011-PM-RISK-risk-register.md` — Active risk tracking (12 risks)
 
+### OD — Operations & Deployment (continued)
+
+- `016-OD-OPSM-branch-protection-checklist.md` — GitHub branch protection configuration checklist
+
 ### AA — After Action & Review
 
 - `012-AA-AACR-initial-aar.md` — Phase 0 after action review
 - `013-AA-AACR-phase1-schema.md` — Phase 1 core schema after action review
+- `014-AA-AACR-phase2-runtime.md` — Phase 2 claude runtime after action review
+- `015-AA-AACR-phase3-adapter.md` — Phase 3 qmd adapter after action review
 
 ## Chronological Listing
 
-| #   | Code    | File                       | Description                 |
-| --- | ------- | -------------------------- | --------------------------- |
-| 000 | PP-PLAN | mega-blueprint             | Canonical project blueprint |
-| 001 | AT-ARCH | repo-blueprint             | Repository structure        |
-| 002 | AT-ARCH | architecture-overview      | System architecture         |
-| 003 | AT-DSGN | system-thesis              | Design rationale            |
-| 004 | PP-RMAP | phase-plan                 | Implementation roadmap      |
-| 005 | TQ-TEST | testing-ci-strategy        | Testing and CI              |
-| 006 | TQ-SECU | security-governance        | Security and threats        |
-| 007 | AT-DSGN | data-model-draft           | Domain model                |
-| 008 | OD-RELS | release-versioning-policy  | Release policy              |
-| 009 | DR-GUID | contribution-workflow      | Contributor guide           |
-| 010 | WA-WFLW | internal-claude-operations | Claude workflows            |
-| 011 | PM-RISK | risk-register              | Risk tracking               |
-| 012 | AA-AACR | initial-aar                | Phase 0 AAR                 |
-| 013 | AA-AACR | phase1-schema              | Phase 1 AAR                 |
+| #   | Code    | File                        | Description                 |
+| --- | ------- | --------------------------- | --------------------------- |
+| 000 | PP-PLAN | mega-blueprint              | Canonical project blueprint |
+| 001 | AT-ARCH | repo-blueprint              | Repository structure        |
+| 002 | AT-ARCH | architecture-overview       | System architecture         |
+| 003 | AT-DSGN | system-thesis               | Design rationale            |
+| 004 | PP-RMAP | phase-plan                  | Implementation roadmap      |
+| 005 | TQ-TEST | testing-ci-strategy         | Testing and CI              |
+| 006 | TQ-SECU | security-governance         | Security and threats        |
+| 007 | AT-DSGN | data-model-draft            | Domain model                |
+| 008 | OD-RELS | release-versioning-policy   | Release policy              |
+| 009 | DR-GUID | contribution-workflow       | Contributor guide           |
+| 010 | WA-WFLW | internal-claude-operations  | Claude workflows            |
+| 011 | PM-RISK | risk-register               | Risk tracking               |
+| 012 | AA-AACR | initial-aar                 | Phase 0 AAR                 |
+| 013 | AA-AACR | phase1-schema               | Phase 1 AAR                 |
+| 014 | AA-AACR | phase2-runtime              | Phase 2 AAR                 |
+| 015 | AA-AACR | phase3-adapter              | Phase 3 AAR                 |
+| 016 | OD-OPSM | branch-protection-checklist | Branch protection setup     |
 
-## Next Available Sequence: 014
+## Next Available Sequence: 017

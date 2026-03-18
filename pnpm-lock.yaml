@@ -41,13 +41,27 @@ importers:
 
   apps/reporting: {}
 
-  packages/claude-runtime: {}
+  packages/claude-runtime:
+    dependencies:
+      '@qmd-team-intent-kb/common':
+        specifier: workspace:*
+        version: link:../common
+      '@qmd-team-intent-kb/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/common: {}
 
   packages/policy-engine: {}
 
-  packages/qmd-adapter: {}
+  packages/qmd-adapter:
+    dependencies:
+      '@qmd-team-intent-kb/common':
+        specifier: workspace:*
+        version: link:../common
+      '@qmd-team-intent-kb/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/repo-resolver: {}
 

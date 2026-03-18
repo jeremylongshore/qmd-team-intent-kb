@@ -1,0 +1,49 @@
+name: Security
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Weekly Monday 6am UTC
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'pnpm-lock.yaml'
+      - '**/package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: npm audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Lockfile integrity
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts 2>&1
+          if [ $? -ne 0 ]; then
+            echo "::error::Lockfile out of sync with package.json"
+            exit 1
+          fi
+
+      - name: No secrets in tracked files
+        run: |
+          PATTERNS='(PRIVATE.KEY|sk-[a-zA-Z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|ghp_[a-zA-Z0-9]{36}|password\s*=\s*["\x27][^"\x27]{8,})'
+          if git grep -E "$PATTERNS" -- ':!.github/workflows/security.yml' ':!*.md'; then
+            echo "::error::Potential secrets detected in tracked files"
+            exit 1
+          fi
