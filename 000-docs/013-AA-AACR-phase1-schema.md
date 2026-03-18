@@ -51,6 +51,7 @@ archived → (terminal)
 ## Dependencies Enabled
 
 Phase 1 unblocks:
+
 - Phase 2 (Claude Runtime Capture) — imports MemoryCandidate, MemorySource, TrustLevel
 - Phase 3 (qmd Adapter) — imports SearchQuery, SearchResult, SearchScope
 - Phase 4 (Policy Engine) — imports GovernancePolicy, PolicyRule, MemoryCandidate

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Claude runtime capture layer with local JSONL spool, secret detection (11 patterns), and content redaction
+- Shared utilities: Result<T, E> type, SHA-256 content hashing, TeamKB path resolution
+- Shell hook templates and CLAUDE.md guidance block generators
 - Core domain model with Zod schemas for MemoryCandidate, CuratedMemory, GovernancePolicy, SearchQuery/Result, and AuditEvent
 - Lifecycle state machine with transition validation (active, deprecated, superseded, archived)
 - Shared primitive types (UUID, SHA-256 hash, ISO datetime, Author, ContentMetadata)

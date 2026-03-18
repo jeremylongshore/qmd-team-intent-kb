@@ -39,6 +39,7 @@
 
 - `012-AA-AACR-initial-aar.md` — Phase 0 after action review
 - `013-AA-AACR-phase1-schema.md` — Phase 1 core schema after action review
+- `014-AA-AACR-phase2-runtime.md` — Phase 2 claude runtime after action review
 
 ## Chronological Listing
 
@@ -58,5 +59,6 @@
 | 011 | PM-RISK | risk-register              | Risk tracking               |
 | 012 | AA-AACR | initial-aar                | Phase 0 AAR                 |
 | 013 | AA-AACR | phase1-schema              | Phase 1 AAR                 |
+| 014 | AA-AACR | phase2-runtime             | Phase 2 AAR                 |
 
-## Next Available Sequence: 014
+## Next Available Sequence: 015
