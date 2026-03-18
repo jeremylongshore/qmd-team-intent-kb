@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "qmd_team_intent_kb",
+  "project_id": "e0992f2a-5f35-4eb3-9f72-75dafd380c78"
+}
