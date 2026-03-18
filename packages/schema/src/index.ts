@@ -1,3 +1,46 @@
-// TODO: Zod schemas for MemoryCandidate, CuratedMemory, GovernancePolicy, SearchQuery, etc. (Phase 1)
+// Enums
+export {
+  MemorySource,
+  TrustLevel,
+  MemoryCategory,
+  MemoryLifecycleState,
+  CandidateStatus,
+  SearchScope,
+  PolicyRuleType,
+  PolicyRuleAction,
+  AuditAction,
+  Confidence,
+  Sensitivity,
+  AuthorType,
+} from './enums.js';
 
-export const name = '@qmd-team-intent-kb/schema';
+// Common primitives
+export {
+  Uuid,
+  Sha256Hash,
+  IsoDatetime,
+  NonEmptyString,
+  SemVer,
+  Tag,
+  Author,
+  TenantId,
+  ContentMetadata,
+} from './common.js';
+
+// Domain schemas
+export { PrePolicyFlags, MemoryCandidate } from './memory-candidate.js';
+export { PolicyEvaluation, SupersessionLink, CuratedMemory } from './curated-memory.js';
+export type { ActiveMemory, SupersededMemory } from './curated-memory.js';
+export { PolicyRule, GovernancePolicy } from './governance-policy.js';
+export { Pagination, SearchQuery, SearchHit, SearchResult } from './search.js';
+export { AuditEvent } from './audit-event.js';
+
+// Lifecycle
+export {
+  TransitionRequest,
+  ALLOWED_TRANSITIONS,
+  isTransitionAllowed,
+  validateTransition,
+  getAllowedTransitionsFrom,
+} from './lifecycle.js';
+export type { TransitionValidationResult } from './lifecycle.js';
