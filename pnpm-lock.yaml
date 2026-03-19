@@ -75,7 +75,36 @@ importers:
         specifier: ^7.6.0
         version: 7.6.13
 
-  apps/edge-daemon: {}
+  apps/edge-daemon:
+    dependencies:
+      '@qmd-team-intent-kb/claude-runtime':
+        specifier: workspace:*
+        version: link:../../packages/claude-runtime
+      '@qmd-team-intent-kb/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@qmd-team-intent-kb/curator':
+        specifier: workspace:*
+        version: link:../curator
+      '@qmd-team-intent-kb/git-exporter':
+        specifier: workspace:*
+        version: link:../git-exporter
+      '@qmd-team-intent-kb/policy-engine':
+        specifier: workspace:*
+        version: link:../../packages/policy-engine
+      '@qmd-team-intent-kb/qmd-adapter':
+        specifier: workspace:*
+        version: link:../../packages/qmd-adapter
+      '@qmd-team-intent-kb/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@qmd-team-intent-kb/store':
+        specifier: workspace:*
+        version: link:../../packages/store
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.0
+        version: 7.6.13
 
   apps/git-exporter:
     dependencies:
