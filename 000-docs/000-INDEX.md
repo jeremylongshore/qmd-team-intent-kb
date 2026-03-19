@@ -45,6 +45,9 @@
 - `013-AA-AACR-phase1-schema.md` — Phase 1 core schema after action review
 - `014-AA-AACR-phase2-runtime.md` — Phase 2 claude runtime after action review
 - `015-AA-AACR-phase3-adapter.md` — Phase 3 qmd adapter after action review
+- `017-AA-AACR-phase4-api.md` — Phase 4 policy engine, store, and API after action review
+- `018-AA-AACR-phase5-curator.md` — Phase 5 curator engine after action review
+- `019-AA-AACR-phase6-exporter.md` — Phase 6 git exporter after action review
 
 ## Chronological Listing
 
@@ -67,5 +70,8 @@
 | 014 | AA-AACR | phase2-runtime              | Phase 2 AAR                 |
 | 015 | AA-AACR | phase3-adapter              | Phase 3 AAR                 |
 | 016 | OD-OPSM | branch-protection-checklist | Branch protection setup     |
+| 017 | AA-AACR | phase4-api                  | Phase 4 AAR                 |
+| 018 | AA-AACR | phase5-curator              | Phase 5 AAR                 |
+| 019 | AA-AACR | phase6-exporter             | Phase 6 AAR                 |
 
-## Next Available Sequence: 017
+## Next Available Sequence: 020

@@ -1,0 +1,101 @@
+import { describe, it, expect } from 'vitest';
+import {
+  getDirectory,
+  getCategoryDirectory,
+  getRelativePath,
+} from '../formatter/directory-mapper.js';
+import { makeCuratedMemory, NOW } from './fixtures.js';
+import { randomUUID } from 'node:crypto';
+
+describe('getCategoryDirectory', () => {
+  it('maps decision → decisions', () => {
+    expect(getCategoryDirectory('decision')).toBe('decisions');
+  });
+
+  it('maps pattern → curated', () => {
+    expect(getCategoryDirectory('pattern')).toBe('curated');
+  });
+
+  it('maps convention → curated', () => {
+    expect(getCategoryDirectory('convention')).toBe('curated');
+  });
+
+  it('maps architecture → curated', () => {
+    expect(getCategoryDirectory('architecture')).toBe('curated');
+  });
+
+  it('maps troubleshooting → guides', () => {
+    expect(getCategoryDirectory('troubleshooting')).toBe('guides');
+  });
+
+  it('maps reference → guides', () => {
+    expect(getCategoryDirectory('reference')).toBe('guides');
+  });
+
+  it('maps onboarding → guides', () => {
+    expect(getCategoryDirectory('onboarding')).toBe('guides');
+  });
+
+  it('maps unknown category → curated (fallback)', () => {
+    expect(getCategoryDirectory('unknown-category')).toBe('curated');
+  });
+});
+
+describe('getDirectory', () => {
+  it('archived lifecycle → archive regardless of category', () => {
+    const memory = makeCuratedMemory({ category: 'decision', lifecycle: 'archived' });
+    expect(getDirectory(memory)).toBe('archive');
+  });
+
+  it('superseded lifecycle → archive regardless of category', () => {
+    const supersededById = randomUUID();
+    const memory = makeCuratedMemory({
+      category: 'pattern',
+      lifecycle: 'superseded',
+      supersession: { supersededBy: supersededById, reason: 'Updated', linkedAt: NOW },
+    });
+    expect(getDirectory(memory)).toBe('archive');
+  });
+
+  it('active lifecycle uses category mapping', () => {
+    const memory = makeCuratedMemory({ category: 'decision', lifecycle: 'active' });
+    expect(getDirectory(memory)).toBe('decisions');
+  });
+
+  it('deprecated lifecycle uses category mapping', () => {
+    const memory = makeCuratedMemory({ category: 'pattern', lifecycle: 'deprecated' });
+    expect(getDirectory(memory)).toBe('curated');
+  });
+
+  it('active architecture → curated', () => {
+    const memory = makeCuratedMemory({ category: 'architecture', lifecycle: 'active' });
+    expect(getDirectory(memory)).toBe('curated');
+  });
+
+  it('active reference → guides', () => {
+    const memory = makeCuratedMemory({ category: 'reference', lifecycle: 'active' });
+    expect(getDirectory(memory)).toBe('guides');
+  });
+});
+
+describe('getRelativePath', () => {
+  it('combines directory with {id}.md', () => {
+    const memory = makeCuratedMemory({ category: 'decision', lifecycle: 'active' });
+    expect(getRelativePath(memory)).toBe(`decisions/${memory.id}.md`);
+  });
+
+  it('archived memory path uses archive/', () => {
+    const memory = makeCuratedMemory({ category: 'pattern', lifecycle: 'archived' });
+    expect(getRelativePath(memory)).toBe(`archive/${memory.id}.md`);
+  });
+
+  it('pattern memory path uses curated/', () => {
+    const memory = makeCuratedMemory({ category: 'pattern', lifecycle: 'active' });
+    expect(getRelativePath(memory)).toBe(`curated/${memory.id}.md`);
+  });
+
+  it('guides memory path uses guides/', () => {
+    const memory = makeCuratedMemory({ category: 'onboarding', lifecycle: 'active' });
+    expect(getRelativePath(memory)).toBe(`guides/${memory.id}.md`);
+  });
+});

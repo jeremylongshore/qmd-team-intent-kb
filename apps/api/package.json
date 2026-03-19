@@ -1,8 +1,17 @@
 {
   "name": "@qmd-team-intent-kb/api",
-  "version": "0.0.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
@@ -11,6 +20,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "fastify": "^5.0.0"
+    "fastify": "^5.0.0",
+    "@qmd-team-intent-kb/schema": "workspace:*",
+    "@qmd-team-intent-kb/common": "workspace:*",
+    "@qmd-team-intent-kb/store": "workspace:*",
+    "@qmd-team-intent-kb/policy-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0"
   }
 }

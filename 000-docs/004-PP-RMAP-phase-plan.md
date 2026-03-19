@@ -94,9 +94,9 @@ The project is implemented in sequential phases, each building on the previous. 
 
 ---
 
-## Phase 4 — Policy Engine
+## Phase 4 — Policy Engine + Store + Control Plane API
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
 **Scope**: Implement the deterministic governance rule evaluation pipeline. No LLM involvement — all decisions are code.
 
@@ -117,9 +117,9 @@ The project is implemented in sequential phases, each building on the previous. 
 
 ---
 
-## Phase 5 — Control Plane API
+## Phase 5 — Curator Engine
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
 **Scope**: Fastify REST API serving as the central authority for memory operations, search delegation, and governance administration.
 
@@ -139,9 +139,9 @@ The project is implemented in sequential phases, each building on the previous. 
 
 ---
 
-## Phase 6 — Curator Engine
+## Phase 6 — Git Export Mirror
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
 **Scope**: The promotion pipeline that moves memory candidates from inbox through governance to curated status.
 
@@ -161,7 +161,7 @@ The project is implemented in sequential phases, each building on the previous. 
 
 ---
 
-## Phase 7 — Git Export Mirror
+## Phase 7 — (Reserved)
 
 **Status**: NOT STARTED
 

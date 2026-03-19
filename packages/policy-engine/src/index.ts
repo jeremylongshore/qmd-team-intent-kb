@@ -1,3 +1,9 @@
-// TODO: Memory governance policy evaluation engine (Phase 4)
-
-export const name = '@qmd-team-intent-kb/policy-engine';
+export type { RuleResult, EvaluationContext, RuleEvaluator, PipelineResult } from './types.js';
+export { createRule, RULE_REGISTRY } from './rules/index.js';
+export { evaluateSecretDetection } from './rules/secret-detection-rule.js';
+export { evaluateContentLength } from './rules/content-length-rule.js';
+export { evaluateSourceTrust } from './rules/source-trust-rule.js';
+export { evaluateRelevanceScore } from './rules/relevance-score-rule.js';
+export { evaluateDedupCheck } from './rules/dedup-check-rule.js';
+export { evaluateTenantMatch } from './rules/tenant-match-rule.js';
+export { PolicyPipeline } from './pipeline.js';
