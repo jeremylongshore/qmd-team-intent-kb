@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { execSync } from 'node:child_process';
 import { RealQmdExecutor } from '../executor/real-executor.js';
 
+// Sync check required — describe.skipIf does not support async conditions
 function isQmdAvailable(): boolean {
   try {
     execSync('which qmd', { stdio: 'ignore' });
