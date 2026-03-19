@@ -161,45 +161,39 @@ The project is implemented in sequential phases, each building on the previous. 
 
 ---
 
-## Phase 7 — (Reserved)
+## Phase 7 — Reporting & Analytics
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
-**Scope**: Publish curated knowledge to configurable git repositories as structured Markdown files.
+**Scope**: Analytics, lifecycle reporting, and governance visibility.
+
+Note: Plan originally described this phase as 'Git Export' but actual Phase 7 implemented Reporting & Analytics. Git export was delivered in Phase 6.
 
 **Deliverables**:
 
-- **Export engine**: Reads curated memories from canonical store, formats as Markdown + YAML frontmatter.
-- **Incremental export**: Tracks last export state per target repository. Only exports memories that changed since last run.
-- **Frontmatter schema**: Standardized YAML frontmatter including memory ID, lifecycle state, creation date, last modified, tags, supersession links, and provenance.
-- **Target configuration**: Support multiple git repositories as export targets. Per-target filtering by tenant, tag, or content type.
-- **Git operations**: Clone/pull target repo, write/update/delete files, commit with structured message, push.
-- **Conflict handling**: If target repo has been manually edited, detect conflicts and log warnings (canonical store always wins).
-- Unit tests for Markdown formatting, frontmatter generation, and incremental change detection.
-- Integration tests with a local git repository.
+- Reporting app with lifecycle analytics: memory aggregator, policy aggregator, lifecycle formatters (53 tests)
+- Analytics data sourced from store repositories
 
-**Dependencies**: Phase 6 (curator produces curated memories to export).
+**Dependencies**: Phase 6 (curator produces curated memories to report on).
 
 ---
 
-## Phase 8 — Edge Daemon
+## Phase 8 — Security Hardening
 
-**Status**: NOT STARTED
+**Status**: COMPLETE
 
-**Scope**: Background daemon that syncs canonical store to local qmd indexes on developer machines.
+**Scope**: API middleware, content classification, export gating, and path-safety hardening.
+
+Note: Plan originally described this phase as 'Edge Daemon' but actual Phase 8 implemented Security Hardening. Edge daemon is deferred to post-v1.
 
 **Deliverables**:
 
-- **Sync engine**: Polls or subscribes to canonical store for changes. Determines delta since last sync.
-- **Incremental indexing**: Updates local qmd index with only changed memories (new, updated, deleted).
-- **Per-project isolation**: Maintains separate qmd indexes per project/tenant. Never cross-pollinates indexes.
-- **Conflict resolution**: Handles concurrent edits gracefully. Canonical store always wins conflicts.
-- **Daemon lifecycle**: Start, stop, status, health check. Configurable sync interval.
-- **Offline resilience**: Queues sync operations when canonical store is unreachable. Replays on reconnection.
-- Unit tests for delta calculation, conflict resolution, and index isolation.
-- Integration tests for sync operations with qmd adapter.
+- API middleware stack: rate-limiter (sliding window), API key authentication, input sanitizer with recursive traversal (76 tests)
+- Content classifier with sensitivity-gate and content-sanitization policy rules
+- Export gating — git-exporter respects sensitivity classification
+- Path-safety utilities in common package with traversal and null-byte detection
 
-**Dependencies**: Phase 3 (qmd adapter), Phase 5 (control plane API as canonical store).
+**Dependencies**: Phase 4 (policy engine), Phase 5 (control plane API).
 
 ---
 

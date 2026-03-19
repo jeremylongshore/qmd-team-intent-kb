@@ -6,6 +6,7 @@
 
 - `000-PP-PLAN-mega-blueprint.md` — Canonical project blueprint (pre-implementation)
 - `004-PP-RMAP-phase-plan.md` — Phased implementation roadmap (Phase 0–9)
+- `024-PP-CLOS-v1-scope-closeout.md` — v1 scope closeout and deferred items
 
 ### AT — Architecture & Technical
 
@@ -22,6 +23,7 @@
 ### OD — Operations & Deployment
 
 - `008-OD-RELS-release-versioning-policy.md` — Semantic versioning and changelog policy
+- `020-OD-RELS-v1-release-checklist.md` — v1 release checklist and gates
 
 ### DR — Documentation & Reference
 
@@ -48,6 +50,9 @@
 - `017-AA-AACR-phase4-api.md` — Phase 4 policy engine, store, and API after action review
 - `018-AA-AACR-phase5-curator.md` — Phase 5 curator engine after action review
 - `019-AA-AACR-phase6-exporter.md` — Phase 6 git exporter after action review
+- `021-AA-AACR-phase7-reporting.md` — Phase 7 reporting after action review
+- `022-AA-AACR-phase8-security.md` — Phase 8 security hardening after action review
+- `023-AA-AACR-phase9-release-readiness.md` — Phase 9 release readiness after action review
 
 ## Chronological Listing
 
@@ -73,5 +78,10 @@
 | 017 | AA-AACR | phase4-api                  | Phase 4 AAR                 |
 | 018 | AA-AACR | phase5-curator              | Phase 5 AAR                 |
 | 019 | AA-AACR | phase6-exporter             | Phase 6 AAR                 |
+| 020 | OD-RELS | v1-release-checklist        | v1 release checklist        |
+| 021 | AA-AACR | phase7-reporting            | Phase 7 AAR                 |
+| 022 | AA-AACR | phase8-security             | Phase 8 AAR                 |
+| 023 | AA-AACR | phase9-release-readiness    | Phase 9 AAR                 |
+| 024 | PP-CLOS | v1-scope-closeout           | v1 scope closeout           |
 
-## Next Available Sequence: 020
+## Next Available Sequence: 025

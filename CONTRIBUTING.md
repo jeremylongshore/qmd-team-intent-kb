@@ -4,19 +4,18 @@ Thank you for your interest in contributing. This document covers the workflows,
 
 ## Branching Model
 
-| Branch pattern | Purpose                                                      | Merges into                  |
-| -------------- | ------------------------------------------------------------ | ---------------------------- |
-| `main`         | Stable, release-ready code. Protected.                       | --                           |
-| `develop`      | Integration branch for in-progress work.                     | `main`                       |
-| `feat/*`       | New features and capabilities.                               | `develop`                    |
-| `fix/*`        | Bug fixes.                                                   | `develop` or `main` (hotfix) |
-| `docs/*`       | Documentation-only changes.                                  | `develop` or `main`          |
-| `release/*`    | Release preparation (version bumps, changelog finalization). | `main`                       |
-| `refactor/*`   | Code restructuring without behavior changes.                 | `develop`                    |
+| Branch pattern | Purpose                                                      | Merges into |
+| -------------- | ------------------------------------------------------------ | ----------- |
+| `main`         | Stable, release-ready code. Protected.                       | --          |
+| `feat/*`       | New features and capabilities.                               | `main`      |
+| `fix/*`        | Bug fixes.                                                   | `main`      |
+| `docs/*`       | Documentation-only changes.                                  | `main`      |
+| `release/*`    | Release preparation (version bumps, changelog finalization). | `main`      |
+| `refactor/*`   | Code restructuring without behavior changes.                 | `main`      |
 
 **Rules:**
 
-- Never commit directly to `main` or `develop`.
+- Never commit directly to `main`.
 - Feature branches should be short-lived. Merge or close within a week when possible.
 - Delete branches after merge.
 
@@ -69,7 +68,7 @@ Every PR must include:
 - At least **one approval** is required before merge.
 - **Gemini code review** runs automatically on all PRs via GitHub Actions.
 - Address all review comments before merging. Do not dismiss reviews without discussion.
-- Squash merge is preferred for feature branches to keep `main`/`develop` history clean.
+- Squash merge is preferred for feature branches to keep `main` history clean.
 
 ## Testing
 
@@ -146,7 +145,7 @@ Get buy-in on the RFC before writing code.
 ### Release Preparation
 
 - Use a `release/*` branch.
-- Follow the release process documented in `000-docs/008-release-versioning-policy.md`.
+- Follow the release process documented in `000-docs/008-OD-RELS-release-versioning-policy.md`.
 - Finalize changelog: move `[Unreleased]` entries to a versioned section.
 - Bump version numbers in all package.json files.
 - Tag the release after merge to `main`.
@@ -162,4 +161,4 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 | **Major** (x.0.0)              | Breaking changes. Schema migrations, API contract changes, removed features.                        |
 | **Prerelease** (x.y.z-alpha.N) | Risky or experimental changes that need validation before stable release.                           |
 
-During Phase 0 (0.x.y), the API is not considered stable. Minor versions may include breaking changes with appropriate changelog documentation.
+During pre-1.0 (0.x.y), the API is not considered stable. Minor versions may include breaking changes with appropriate changelog documentation.

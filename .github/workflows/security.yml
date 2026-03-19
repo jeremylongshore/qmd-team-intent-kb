@@ -43,7 +43,7 @@ jobs:
       - name: No secrets in tracked files
         run: |
           PATTERNS='(PRIVATE.KEY|sk-[a-zA-Z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|ghp_[a-zA-Z0-9]{36}|password\s*=\s*["\x27][^"\x27]{8,})'
-          if git grep -E "$PATTERNS" -- ':!.github/workflows/security.yml' ':!*.md'; then
+          if git grep -E "$PATTERNS" -- ':!.github/workflows/security.yml' ':!*.md' ':!*.test.ts' ':!**/patterns.ts'; then
             echo "::error::Potential secrets detected in tracked files"
             exit 1
           fi

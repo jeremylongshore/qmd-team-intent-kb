@@ -1,3 +1,3 @@
-// TODO: Local qmd sync daemon — sync canonical store to local indexes (Phase 8)
+// TODO: Local qmd sync daemon — deferred to post-v1
 
 export const name = '@qmd-team-intent-kb/edge-daemon';
