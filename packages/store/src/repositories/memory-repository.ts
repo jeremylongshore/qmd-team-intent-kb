@@ -60,6 +60,7 @@ function rowToMemory(row: MemoryRow): CuratedMemory {
  * All methods use prepared statements. Validation is the caller's responsibility.
  */
 export class MemoryRepository {
+  private readonly db: Database.Database;
   private readonly stmtInsert: Database.Statement;
   private readonly stmtFindById: Database.Statement;
   private readonly stmtFindByTenant: Database.Statement;
@@ -76,6 +77,8 @@ export class MemoryRepository {
   private readonly stmtFindByTenantAndLifecycle: Database.Statement;
 
   constructor(db: Database.Database) {
+    this.db = db;
+
     this.stmtInsert = db.prepare(`
       INSERT INTO curated_memories (
         id, candidate_id, source, content, title, category,
@@ -307,6 +310,33 @@ export class MemoryRepository {
   /** Find memories by tenant and lifecycle state */
   findByTenantAndLifecycle(tenantId: string, lifecycle: MemoryLifecycleState): CuratedMemory[] {
     const rows = this.stmtFindByTenantAndLifecycle.all(tenantId, lifecycle) as MemoryRow[];
+    return rows.map(rowToMemory);
+  }
+
+  /**
+   * Search active curated memories by text match on title and content.
+   * Uses SQL LIKE for lightweight search — no FTS5 dependency.
+   * Results capped at 100 rows.
+   */
+  searchByText(query: string, tenantId?: string, categories?: string[]): CuratedMemory[] {
+    const conditions = ["lifecycle = 'active'", '(title LIKE @pattern OR content LIKE @pattern)'];
+    const params: Record<string, string> = { pattern: `%${query}%` };
+
+    if (tenantId !== undefined) {
+      conditions.push('tenant_id = @tenantId');
+      params['tenantId'] = tenantId;
+    }
+
+    if (categories !== undefined && categories.length > 0) {
+      const placeholders = categories.map((_, i) => `@cat${i}`);
+      conditions.push(`category IN (${placeholders.join(', ')})`);
+      categories.forEach((cat, i) => {
+        params[`cat${i}`] = cat;
+      });
+    }
+
+    const sql = `SELECT * FROM curated_memories WHERE ${conditions.join(' AND ')} LIMIT 100`;
+    const rows = this.db.prepare(sql).all(params) as MemoryRow[];
     return rows.map(rowToMemory);
   }
 }

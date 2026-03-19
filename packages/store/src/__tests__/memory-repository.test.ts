@@ -318,3 +318,129 @@ describe('MemoryRepository — aggregation queries', () => {
     expect(results).toHaveLength(0);
   });
 });
+
+describe('MemoryRepository — searchByText', () => {
+  let db: Database.Database;
+  let repo: MemoryRepository;
+
+  beforeEach(() => {
+    db = createTestDatabase();
+    repo = new MemoryRepository(db);
+  });
+
+  it('returns memories matching title', () => {
+    repo.insert(
+      makeMemory({
+        title: 'API validation pattern',
+        content: 'Always validate inputs at the boundary',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    // Insert a second memory with a non-matching title to confirm filtering
+    repo.insert(
+      makeMemory({
+        title: 'Database migration guide',
+        content: 'Run migrations before deploying',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const results = repo.searchByText('validation');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.title).toBe('API validation pattern');
+  });
+
+  it('returns memories matching content', () => {
+    repo.insert(
+      makeMemory({
+        title: 'Retry strategy',
+        content: 'Use exponential backoff for all transient failures',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const results = repo.searchByText('exponential backoff');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.title).toBe('Retry strategy');
+  });
+
+  it('filters by tenantId', () => {
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-alpha',
+        title: 'Caching convention',
+        content: 'Cache at the service layer only',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-beta',
+        title: 'Caching convention',
+        content: 'Cache at the service layer only',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const results = repo.searchByText('Cache', 'team-alpha');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.tenantId).toBe('team-alpha');
+  });
+
+  it('filters by categories', () => {
+    repo.insert(
+      makeMemory({
+        category: 'pattern',
+        title: 'Request scoping pattern',
+        content: 'Scope all requests via middleware',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        category: 'decision',
+        title: 'Database decision',
+        content: 'Scope decided: use SQLite for local storage',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const patternResults = repo.searchByText('Scope', undefined, ['pattern']);
+    expect(patternResults).toHaveLength(1);
+    expect(patternResults[0]?.category).toBe('pattern');
+
+    const bothResults = repo.searchByText('Scope', undefined, ['pattern', 'decision']);
+    expect(bothResults).toHaveLength(2);
+  });
+
+  it('only returns active memories', () => {
+    const sharedContent = 'Shared unique observability content xq7';
+    repo.insert(
+      makeMemory({
+        lifecycle: 'active',
+        title: 'Observability active',
+        content: sharedContent,
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        lifecycle: 'deprecated',
+        title: 'Observability deprecated',
+        content: sharedContent,
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const results = repo.searchByText('xq7');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.lifecycle).toBe('active');
+  });
+
+  it('returns empty array for no matches', () => {
+    repo.insert(
+      makeMemory({
+        title: 'Unrelated topic',
+        content: 'Nothing relevant here',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const results = repo.searchByText('zzznomatchzzz');
+    expect(results).toHaveLength(0);
+  });
+});
