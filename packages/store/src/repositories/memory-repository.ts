@@ -69,6 +69,11 @@ export class MemoryRepository {
   private readonly stmtUpdate: Database.Statement;
   private readonly stmtCount: Database.Statement;
   private readonly stmtAllHashes: Database.Statement;
+  private readonly stmtCountByLifecycle: Database.Statement;
+  private readonly stmtCountByCategory: Database.Statement;
+  private readonly stmtCountByTenant: Database.Statement;
+  private readonly stmtFindStale: Database.Statement;
+  private readonly stmtFindByTenantAndLifecycle: Database.Statement;
 
   constructor(db: Database.Database) {
     this.stmtInsert = db.prepare(`
@@ -136,6 +141,26 @@ export class MemoryRepository {
 
     this.stmtAllHashes = db.prepare(`
       SELECT content_hash FROM curated_memories
+    `);
+
+    this.stmtCountByLifecycle = db.prepare(`
+      SELECT lifecycle, COUNT(*) as cnt FROM curated_memories GROUP BY lifecycle
+    `);
+
+    this.stmtCountByCategory = db.prepare(`
+      SELECT category, COUNT(*) as cnt FROM curated_memories GROUP BY category
+    `);
+
+    this.stmtCountByTenant = db.prepare(`
+      SELECT tenant_id, COUNT(*) as cnt FROM curated_memories GROUP BY tenant_id
+    `);
+
+    this.stmtFindStale = db.prepare(`
+      SELECT * FROM curated_memories WHERE lifecycle = 'active' AND updated_at < ?
+    `);
+
+    this.stmtFindByTenantAndLifecycle = db.prepare(`
+      SELECT * FROM curated_memories WHERE tenant_id = ? AND lifecycle = ?
     `);
   }
 
@@ -241,5 +266,47 @@ export class MemoryRepository {
   getAllContentHashes(): string[] {
     const rows = this.stmtAllHashes.all() as Array<{ content_hash: string }>;
     return rows.map((r) => r.content_hash);
+  }
+
+  /** Count memories grouped by lifecycle state */
+  countByLifecycle(): Record<string, number> {
+    const rows = this.stmtCountByLifecycle.all() as Array<{ lifecycle: string; cnt: number }>;
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.lifecycle] = row.cnt;
+    }
+    return result;
+  }
+
+  /** Count memories grouped by category */
+  countByCategory(): Record<string, number> {
+    const rows = this.stmtCountByCategory.all() as Array<{ category: string; cnt: number }>;
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.category] = row.cnt;
+    }
+    return result;
+  }
+
+  /** Count memories grouped by tenant */
+  countByTenant(): Record<string, number> {
+    const rows = this.stmtCountByTenant.all() as Array<{ tenant_id: string; cnt: number }>;
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.tenant_id] = row.cnt;
+    }
+    return result;
+  }
+
+  /** Find active memories not updated since the given ISO date */
+  findStale(olderThan: string): CuratedMemory[] {
+    const rows = this.stmtFindStale.all(olderThan) as MemoryRow[];
+    return rows.map(rowToMemory);
+  }
+
+  /** Find memories by tenant and lifecycle state */
+  findByTenantAndLifecycle(tenantId: string, lifecycle: MemoryLifecycleState): CuratedMemory[] {
+    const rows = this.stmtFindByTenantAndLifecycle.all(tenantId, lifecycle) as MemoryRow[];
+    return rows.map(rowToMemory);
   }
 }

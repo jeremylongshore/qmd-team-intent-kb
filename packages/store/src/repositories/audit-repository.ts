@@ -35,6 +35,9 @@ export class AuditRepository {
   private readonly stmtFindByMemory: Database.Statement;
   private readonly stmtFindByTenant: Database.Statement;
   private readonly stmtFindByAction: Database.Statement;
+  private readonly stmtCountByAction: Database.Statement;
+  private readonly stmtFindInRange: Database.Statement;
+  private readonly stmtCountByTenantAndAction: Database.Statement;
 
   constructor(db: Database.Database) {
     this.stmtInsert = db.prepare(`
@@ -55,6 +58,18 @@ export class AuditRepository {
 
     this.stmtFindByAction = db.prepare(`
       SELECT * FROM audit_events WHERE action = ? ORDER BY timestamp ASC
+    `);
+
+    this.stmtCountByAction = db.prepare(`
+      SELECT action, COUNT(*) as cnt FROM audit_events GROUP BY action
+    `);
+
+    this.stmtFindInRange = db.prepare(`
+      SELECT * FROM audit_events WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC
+    `);
+
+    this.stmtCountByTenantAndAction = db.prepare(`
+      SELECT action, COUNT(*) as cnt FROM audit_events WHERE tenant_id = ? GROUP BY action
     `);
   }
 
@@ -88,5 +103,34 @@ export class AuditRepository {
   findByAction(action: string): AuditEvent[] {
     const rows = this.stmtFindByAction.all(action) as AuditRow[];
     return rows.map(rowToEvent);
+  }
+
+  /** Count events grouped by action type */
+  countByAction(): Record<string, number> {
+    const rows = this.stmtCountByAction.all() as Array<{ action: string; cnt: number }>;
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.action] = row.cnt;
+    }
+    return result;
+  }
+
+  /** Find events within a time range (ISO string comparison) */
+  findInRange(startDate: string, endDate: string): AuditEvent[] {
+    const rows = this.stmtFindInRange.all(startDate, endDate) as AuditRow[];
+    return rows.map(rowToEvent);
+  }
+
+  /** Count events by action for a specific tenant */
+  countByTenantAndAction(tenantId: string): Record<string, number> {
+    const rows = this.stmtCountByTenantAndAction.all(tenantId) as Array<{
+      action: string;
+      cnt: number;
+    }>;
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.action] = row.cnt;
+    }
+    return result;
   }
 }
