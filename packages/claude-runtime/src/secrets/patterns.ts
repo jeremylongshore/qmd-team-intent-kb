@@ -68,4 +68,50 @@ export const SECRET_PATTERNS: SecretPattern[] = [
     regex: /(?:SECRET|PASSWORD|TOKEN|API_KEY|PRIVATE_KEY)\s*=\s*["']?[^\s"']{8,}/i,
     description: 'Environment variable assignment containing a secret value',
   },
+  {
+    id: 'azure-connection-string',
+    name: 'Azure Connection String',
+    regex: /AccountKey=[A-Za-z0-9+/=]{20,}/,
+    description: 'Azure Storage or Service Bus connection string with AccountKey',
+  },
+  {
+    id: 'heroku-api-key',
+    name: 'Heroku API Key',
+    regex: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
+    description: 'Heroku API key (UUID format)',
+  },
+  {
+    id: 'mysql-connection-string',
+    name: 'MySQL Connection String',
+    regex: /mysql:\/\/[^:]+:[^@]+@[^\s]+/,
+    description: 'MySQL connection string with embedded password',
+  },
+  {
+    id: 'postgres-connection-string',
+    name: 'PostgreSQL Connection String',
+    regex: /postgres(?:ql)?:\/\/[^:]+:[^@]+@[^\s]+/,
+    description: 'PostgreSQL connection string with embedded password',
+  },
+];
+
+/** PII detection patterns */
+export const PII_PATTERNS: SecretPattern[] = [
+  {
+    id: 'email-address',
+    name: 'Email Address',
+    regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/,
+    description: 'Email address',
+  },
+  {
+    id: 'us-phone',
+    name: 'US Phone Number',
+    regex: /(?:\+1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}/,
+    description: 'US phone number in various formats',
+  },
+  {
+    id: 'ssn-like',
+    name: 'SSN-like Pattern',
+    regex: /\b[0-9]{3}-[0-9]{2}-[0-9]{4}\b/,
+    description: 'Social Security Number pattern (XXX-XX-XXXX)',
+  },
 ];

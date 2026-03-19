@@ -101,3 +101,48 @@ describe('CandidateRepository', () => {
     expect(found && computeContentHash(found.content)).toBe(contentHash);
   });
 });
+
+describe('CandidateRepository — aggregation queries', () => {
+  let db: Database.Database;
+  let repo: CandidateRepository;
+
+  beforeEach(() => {
+    db = createTestDatabase();
+    repo = new CandidateRepository(db);
+  });
+
+  it('countByTenant returns empty record when no candidates exist', () => {
+    expect(repo.countByTenant()).toEqual({});
+  });
+
+  it('countByTenant returns correct counts per tenant', () => {
+    const { candidate: c1, contentHash: h1 } = makeCandidate({ tenantId: 'team-alpha' });
+    const { candidate: c2, contentHash: h2 } = makeCandidate({
+      tenantId: 'team-alpha',
+      content: 'second alpha content',
+    });
+    const { candidate: c3, contentHash: h3 } = makeCandidate({
+      tenantId: 'team-beta',
+      content: 'beta content',
+    });
+    repo.insert(c1, h1);
+    repo.insert(c2, h2);
+    repo.insert(c3, h3);
+    const counts = repo.countByTenant();
+    expect(counts['team-alpha']).toBe(2);
+    expect(counts['team-beta']).toBe(1);
+    expect(counts['team-gamma']).toBeUndefined();
+  });
+
+  it('countByTenant updates correctly after additional inserts', () => {
+    const { candidate: c1, contentHash: h1 } = makeCandidate({ tenantId: 'team-alpha' });
+    repo.insert(c1, h1);
+    expect(repo.countByTenant()['team-alpha']).toBe(1);
+    const { candidate: c2, contentHash: h2 } = makeCandidate({
+      tenantId: 'team-alpha',
+      content: 'another memory for alpha',
+    });
+    repo.insert(c2, h2);
+    expect(repo.countByTenant()['team-alpha']).toBe(2);
+  });
+});

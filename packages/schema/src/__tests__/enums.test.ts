@@ -88,12 +88,22 @@ describe('PolicyRuleType', () => {
     'content_length',
     'source_trust',
     'tenant_match',
+    'sensitivity_gate',
+    'content_sanitization',
   ];
   it.each(types)('accepts "%s"', (val) => {
     expect(PolicyRuleType.parse(val)).toBe(val);
   });
   it('rejects invalid value', () => {
     expect(() => PolicyRuleType.parse('custom')).toThrow();
+  });
+
+  it('accepts sensitivity_gate as PolicyRuleType', () => {
+    expect(PolicyRuleType.parse('sensitivity_gate')).toBe('sensitivity_gate');
+  });
+
+  it('accepts content_sanitization as PolicyRuleType', () => {
+    expect(PolicyRuleType.parse('content_sanitization')).toBe('content_sanitization');
   });
 });
 

@@ -228,6 +228,38 @@ describe('runExport', () => {
     expect(result.totalProcessed).toBe(0);
   });
 
+  describe('export gating', () => {
+    it('memory with sensitivity=restricted is skipped and its ID appears in skipped array', () => {
+      const m = makeCuratedMemory({ lifecycle: 'active', sensitivity: 'restricted' });
+      memoryRepo.insert(m);
+
+      const result = runExport(memoryRepo, exportStateRepo, makeConfig(outputDir));
+
+      expect(result.written).toHaveLength(0);
+      expect(result.skipped).toContain(m.id);
+    });
+
+    it('memory with sensitivity=confidential is skipped', () => {
+      const m = makeCuratedMemory({ lifecycle: 'active', sensitivity: 'confidential' });
+      memoryRepo.insert(m);
+
+      const result = runExport(memoryRepo, exportStateRepo, makeConfig(outputDir));
+
+      expect(result.written).toHaveLength(0);
+      expect(result.skipped).toContain(m.id);
+    });
+
+    it('memory with sensitivity=internal is written normally', () => {
+      const m = makeCuratedMemory({ lifecycle: 'active', sensitivity: 'internal' });
+      memoryRepo.insert(m);
+
+      const result = runExport(memoryRepo, exportStateRepo, makeConfig(outputDir));
+
+      expect(result.written).toHaveLength(1);
+      expect(result.skipped).toHaveLength(0);
+    });
+  });
+
   it('idempotency check increments unchanged count when file content matches', () => {
     const m = makeCuratedMemory({ lifecycle: 'active', updatedAt: NOW });
     memoryRepo.insert(m);

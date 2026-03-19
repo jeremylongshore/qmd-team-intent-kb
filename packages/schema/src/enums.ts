@@ -33,6 +33,8 @@ export const PolicyRuleType = z.enum([
   'content_length',
   'source_trust',
   'tenant_match',
+  'sensitivity_gate',
+  'content_sanitization',
 ]);
 export type PolicyRuleType = z.infer<typeof PolicyRuleType>;
 

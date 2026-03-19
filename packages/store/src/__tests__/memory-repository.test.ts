@@ -149,3 +149,172 @@ describe('MemoryRepository', () => {
     expect(found?.policyEvaluations[0]?.result).toBe('pass');
   });
 });
+
+describe('MemoryRepository — aggregation queries', () => {
+  let db: Database.Database;
+  let repo: MemoryRepository;
+
+  beforeEach(() => {
+    db = createTestDatabase();
+    repo = new MemoryRepository(db);
+  });
+
+  // countByLifecycle
+  it('countByLifecycle returns empty record when no memories exist', () => {
+    expect(repo.countByLifecycle()).toEqual({});
+  });
+
+  it('countByLifecycle returns correct counts for each state', () => {
+    repo.insert(
+      makeMemory({
+        lifecycle: 'active',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        lifecycle: 'active',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        lifecycle: 'deprecated',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const counts = repo.countByLifecycle();
+    expect(counts['active']).toBe(2);
+    expect(counts['deprecated']).toBe(1);
+    expect(counts['archived']).toBeUndefined();
+  });
+
+  // countByCategory
+  it('countByCategory returns correct counts per category', () => {
+    repo.insert(
+      makeMemory({
+        category: 'pattern',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        category: 'pattern',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        category: 'convention',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const counts = repo.countByCategory();
+    expect(counts['pattern']).toBe(2);
+    expect(counts['convention']).toBe(1);
+  });
+
+  // countByTenant
+  it('countByTenant returns correct counts per tenant', () => {
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-alpha',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-beta',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-beta',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const counts = repo.countByTenant();
+    expect(counts['team-alpha']).toBe(1);
+    expect(counts['team-beta']).toBe(2);
+  });
+
+  // findStale
+  it('findStale returns active memories older than the threshold', () => {
+    const OLD = '2025-06-01T00:00:00.000Z';
+    const RECENT = '2026-03-01T00:00:00.000Z';
+    const THRESHOLD = '2026-01-01T00:00:00.000Z';
+    repo.insert(
+      makeMemory({
+        lifecycle: 'active',
+        updatedAt: OLD,
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        lifecycle: 'active',
+        updatedAt: RECENT,
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const stale = repo.findStale(THRESHOLD);
+    expect(stale).toHaveLength(1);
+    expect(stale[0]?.updatedAt).toBe(OLD);
+  });
+
+  it('findStale ignores non-active memories even when old', () => {
+    const OLD = '2025-06-01T00:00:00.000Z';
+    const THRESHOLD = '2026-01-01T00:00:00.000Z';
+    repo.insert(
+      makeMemory({
+        lifecycle: 'deprecated',
+        updatedAt: OLD,
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const stale = repo.findStale(THRESHOLD);
+    expect(stale).toHaveLength(0);
+  });
+
+  // findByTenantAndLifecycle
+  it('findByTenantAndLifecycle filters on both tenant and lifecycle', () => {
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-alpha',
+        lifecycle: 'active',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-alpha',
+        lifecycle: 'deprecated',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-beta',
+        lifecycle: 'active',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const results = repo.findByTenantAndLifecycle('team-alpha', 'active');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.tenantId).toBe('team-alpha');
+    expect(results[0]?.lifecycle).toBe('active');
+  });
+
+  it('findByTenantAndLifecycle returns empty array when no match', () => {
+    repo.insert(
+      makeMemory({
+        tenantId: 'team-alpha',
+        lifecycle: 'active',
+        contentHash: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      }),
+    );
+    const results = repo.findByTenantAndLifecycle('team-alpha', 'archived');
+    expect(results).toHaveLength(0);
+  });
+});

@@ -77,3 +77,71 @@ describe('AuditRepository', () => {
     expect(found[1]?.action).toBe('archived');
   });
 });
+
+describe('AuditRepository — aggregation queries', () => {
+  let db: Database.Database;
+  let repo: AuditRepository;
+
+  beforeEach(() => {
+    db = createTestDatabase();
+    repo = new AuditRepository(db);
+  });
+
+  // countByAction
+  it('countByAction returns empty record when no events exist', () => {
+    expect(repo.countByAction()).toEqual({});
+  });
+
+  it('countByAction returns correct counts per action type', () => {
+    repo.insert(makeAuditEvent({ action: 'promoted', memoryId: randomUUID() }));
+    repo.insert(makeAuditEvent({ action: 'promoted', memoryId: randomUUID() }));
+    repo.insert(makeAuditEvent({ action: 'archived', memoryId: randomUUID() }));
+    const counts = repo.countByAction();
+    expect(counts['promoted']).toBe(2);
+    expect(counts['archived']).toBe(1);
+    expect(counts['deprecated']).toBeUndefined();
+  });
+
+  // findInRange
+  it('findInRange returns events within the inclusive range', () => {
+    repo.insert(makeAuditEvent({ memoryId: randomUUID(), timestamp: '2026-01-01T00:00:00.000Z' }));
+    repo.insert(makeAuditEvent({ memoryId: randomUUID(), timestamp: '2026-02-15T00:00:00.000Z' }));
+    repo.insert(makeAuditEvent({ memoryId: randomUUID(), timestamp: '2026-03-01T00:00:00.000Z' }));
+    const results = repo.findInRange('2026-01-15T00:00:00.000Z', '2026-02-28T00:00:00.000Z');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.timestamp).toBe('2026-02-15T00:00:00.000Z');
+  });
+
+  it('findInRange returns events at the exact boundary timestamps', () => {
+    const start = '2026-01-01T00:00:00.000Z';
+    const end = '2026-12-31T23:59:59.999Z';
+    repo.insert(makeAuditEvent({ memoryId: randomUUID(), timestamp: start }));
+    repo.insert(makeAuditEvent({ memoryId: randomUUID(), timestamp: end }));
+    const results = repo.findInRange(start, end);
+    expect(results).toHaveLength(2);
+  });
+
+  // countByTenantAndAction
+  it('countByTenantAndAction returns counts scoped to the given tenant', () => {
+    repo.insert(
+      makeAuditEvent({ tenantId: 'team-alpha', action: 'promoted', memoryId: randomUUID() }),
+    );
+    repo.insert(
+      makeAuditEvent({ tenantId: 'team-alpha', action: 'archived', memoryId: randomUUID() }),
+    );
+    repo.insert(
+      makeAuditEvent({ tenantId: 'team-beta', action: 'promoted', memoryId: randomUUID() }),
+    );
+    const alphaCounts = repo.countByTenantAndAction('team-alpha');
+    expect(alphaCounts['promoted']).toBe(1);
+    expect(alphaCounts['archived']).toBe(1);
+    const betaCounts = repo.countByTenantAndAction('team-beta');
+    expect(betaCounts['promoted']).toBe(1);
+    expect(betaCounts['archived']).toBeUndefined();
+  });
+
+  it('countByTenantAndAction returns empty record for unknown tenant', () => {
+    repo.insert(makeAuditEvent({ tenantId: 'team-alpha', memoryId: randomUUID() }));
+    expect(repo.countByTenantAndAction('team-unknown')).toEqual({});
+  });
+});

@@ -16,6 +16,9 @@ import { registerMemoryRoutes } from './routes/memories.js';
 import { registerPolicyRoutes } from './routes/policies.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerAuditRoutes } from './routes/audit.js';
+import { registerRateLimiter } from './middleware/rate-limiter.js';
+import { registerApiKeyAuth } from './middleware/api-key-auth.js';
+import { registerInputSanitizer } from './middleware/input-sanitizer.js';
 
 /** External dependencies injected into the application factory. */
 export interface AppDependencies {
@@ -23,6 +26,14 @@ export interface AppDependencies {
   db: Database.Database;
   /** Suppress Fastify's built-in logger — useful in tests. Default: false. */
   silent?: boolean;
+  /** Optional API key for bearer token auth. If unset, auth is skipped. */
+  apiKey?: string;
+  /** Max requests per rate limit window (default 100) */
+  rateLimitMax?: number;
+  /** Rate limit window in ms (default 60000) */
+  rateLimitWindowMs?: number;
+  /** Max body size in bytes (default 1MB) */
+  maxBodySize?: number;
 }
 
 /**
@@ -33,7 +44,13 @@ export interface AppDependencies {
  * starting the server or using `inject()` for testing.
  */
 export function buildApp(deps: AppDependencies): FastifyInstance {
-  const app = Fastify({ logger: deps.silent !== false ? false : true });
+  const bodyLimit = deps.maxBodySize ?? 1_048_576;
+  const app = Fastify({ logger: deps.silent !== false ? false : true, bodyLimit });
+
+  // Middleware (order: rate-limiter → auth → sanitizer → routes)
+  registerRateLimiter(app, deps.rateLimitMax ?? 100, deps.rateLimitWindowMs ?? 60000);
+  registerApiKeyAuth(app, deps.apiKey);
+  registerInputSanitizer(app, deps.maxBodySize ?? 1_048_576);
 
   // Repositories
   const candidateRepo = new CandidateRepository(deps.db);

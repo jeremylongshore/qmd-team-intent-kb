@@ -7,6 +7,14 @@ export interface AppConfig {
   host: string;
   dbPath: string;
   logLevel: string;
+  /** Optional API key for bearer token auth. If unset, auth is skipped (dev mode). */
+  apiKey?: string;
+  /** Max requests per window for rate limiting (default 100) */
+  rateLimitMax: number;
+  /** Rate limit window in milliseconds (default 60000 = 1 minute) */
+  rateLimitWindowMs: number;
+  /** Maximum request body size in bytes (default 1MB) */
+  maxBodySize: number;
 }
 
 /**
@@ -15,10 +23,15 @@ export interface AppConfig {
  * to ~/.teamkb/data/teamkb.db.
  */
 export function loadConfig(): AppConfig {
+  const apiKeyRaw = process.env['TEAMKB_API_KEY'];
   return {
     port: parseInt(process.env['TEAMKB_API_PORT'] ?? '3847', 10),
     host: process.env['TEAMKB_API_HOST'] ?? '127.0.0.1',
     dbPath: process.env['TEAMKB_DB_PATH'] ?? join(homedir(), '.teamkb', 'data', 'teamkb.db'),
     logLevel: process.env['TEAMKB_LOG_LEVEL'] ?? 'info',
+    apiKey: apiKeyRaw !== undefined && apiKeyRaw !== '' ? apiKeyRaw : undefined,
+    rateLimitMax: parseInt(process.env['TEAMKB_RATE_LIMIT_MAX'] ?? '100', 10),
+    rateLimitWindowMs: parseInt(process.env['TEAMKB_RATE_LIMIT_WINDOW_MS'] ?? '60000', 10),
+    maxBodySize: parseInt(process.env['TEAMKB_MAX_BODY_SIZE'] ?? '1048576', 10),
   };
 }

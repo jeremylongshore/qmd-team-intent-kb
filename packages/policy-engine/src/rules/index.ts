@@ -6,6 +6,8 @@ import { evaluateSourceTrust } from './source-trust-rule.js';
 import { evaluateRelevanceScore } from './relevance-score-rule.js';
 import { evaluateDedupCheck } from './dedup-check-rule.js';
 import { evaluateTenantMatch } from './tenant-match-rule.js';
+import { evaluateSensitivityGate } from './sensitivity-gate-rule.js';
+import { evaluateContentSanitization } from './content-sanitization-rule.js';
 
 /** Registry mapping PolicyRuleType values to their evaluator functions */
 export const RULE_REGISTRY: Record<PolicyRuleType, RuleEvaluator> = {
@@ -15,6 +17,8 @@ export const RULE_REGISTRY: Record<PolicyRuleType, RuleEvaluator> = {
   relevance_score: evaluateRelevanceScore,
   dedup_check: evaluateDedupCheck,
   tenant_match: evaluateTenantMatch,
+  sensitivity_gate: evaluateSensitivityGate,
+  content_sanitization: evaluateContentSanitization,
 };
 
 /**

@@ -47,6 +47,7 @@ export class CandidateRepository {
   private readonly stmtFindByTenant: Database.Statement;
   private readonly stmtFindByHash: Database.Statement;
   private readonly stmtCount: Database.Statement;
+  private readonly stmtCountByTenant: Database.Statement;
 
   constructor(db: Database.Database) {
     this.stmtInsert = db.prepare(`
@@ -75,6 +76,10 @@ export class CandidateRepository {
 
     this.stmtCount = db.prepare(`
       SELECT COUNT(*) as cnt FROM candidates
+    `);
+
+    this.stmtCountByTenant = db.prepare(`
+      SELECT tenant_id, COUNT(*) as cnt FROM candidates GROUP BY tenant_id
     `);
   }
 
@@ -122,5 +127,15 @@ export class CandidateRepository {
   count(): number {
     const result = this.stmtCount.get() as { cnt: number };
     return result.cnt;
+  }
+
+  /** Count candidates grouped by tenant */
+  countByTenant(): Record<string, number> {
+    const rows = this.stmtCountByTenant.all() as Array<{ tenant_id: string; cnt: number }>;
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.tenant_id] = row.cnt;
+    }
+    return result;
   }
 }

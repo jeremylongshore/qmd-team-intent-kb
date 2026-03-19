@@ -1,5 +1,14 @@
 import type { MemoryRepository, ExportStateRepository } from '@qmd-team-intent-kb/store';
+import { Sensitivity } from '@qmd-team-intent-kb/schema';
 import type { ExportConfig, ExportResult } from './types.js';
+
+/** Sensitivity threshold: memories at or above 'confidential' are skipped */
+const CONFIDENTIAL_INDEX = Sensitivity.options.indexOf('confidential');
+
+function isSensitivityRestricted(level: string): boolean {
+  const idx = Sensitivity.options.indexOf(level as (typeof Sensitivity.options)[number]);
+  return idx >= CONFIDENTIAL_INDEX;
+}
 import { detectChanges } from './diff/change-detector.js';
 import { formatMemoryAsMarkdown } from './formatter/markdown-formatter.js';
 import { writeFile, archiveFile, removeFile } from './writer/file-writer.js';
@@ -32,10 +41,15 @@ export function runExport(
   const written: string[] = [];
   const archived: string[] = [];
   const removed: string[] = [];
+  const skipped: string[] = [];
   let unchanged = 0;
 
-  // Write new/updated files
+  // Write new/updated files (skip restricted/confidential)
   for (const item of changeset.toWrite) {
+    if (isSensitivityRestricted(item.memory.sensitivity)) {
+      skipped.push(item.memory.id);
+      continue;
+    }
     const content = formatMemoryAsMarkdown(item.memory);
 
     // Skip if the file already contains identical content (idempotency guard)
@@ -51,8 +65,12 @@ export function runExport(
     written.push(item.filePath);
   }
 
-  // Move archived/superseded files from category dir → archive/
+  // Move archived/superseded files from category dir → archive/ (skip restricted/confidential)
   for (const item of changeset.toArchive) {
+    if (isSensitivityRestricted(item.memory.sensitivity)) {
+      skipped.push(item.memory.id);
+      continue;
+    }
     const content = formatMemoryAsMarkdown(item.memory);
     archiveFile(item.fromPath, item.toPath, content);
     archived.push(item.toPath);
@@ -72,6 +90,7 @@ export function runExport(
     written,
     archived,
     removed,
+    skipped,
     unchanged,
     totalProcessed:
       changeset.toWrite.length + changeset.toArchive.length + changeset.toRemove.length,
