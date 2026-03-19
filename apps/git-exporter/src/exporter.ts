@@ -32,10 +32,15 @@ export function runExport(
   const written: string[] = [];
   const archived: string[] = [];
   const removed: string[] = [];
+  const skipped: string[] = [];
   let unchanged = 0;
 
-  // Write new/updated files
+  // Write new/updated files (skip restricted/confidential)
   for (const item of changeset.toWrite) {
+    if (item.memory.sensitivity === 'restricted' || item.memory.sensitivity === 'confidential') {
+      skipped.push(item.memory.id);
+      continue;
+    }
     const content = formatMemoryAsMarkdown(item.memory);
 
     // Skip if the file already contains identical content (idempotency guard)
@@ -51,8 +56,12 @@ export function runExport(
     written.push(item.filePath);
   }
 
-  // Move archived/superseded files from category dir → archive/
+  // Move archived/superseded files from category dir → archive/ (skip restricted/confidential)
   for (const item of changeset.toArchive) {
+    if (item.memory.sensitivity === 'restricted' || item.memory.sensitivity === 'confidential') {
+      skipped.push(item.memory.id);
+      continue;
+    }
     const content = formatMemoryAsMarkdown(item.memory);
     archiveFile(item.fromPath, item.toPath, content);
     archived.push(item.toPath);
@@ -72,6 +81,7 @@ export function runExport(
     written,
     archived,
     removed,
+    skipped,
     unchanged,
     totalProcessed:
       changeset.toWrite.length + changeset.toArchive.length + changeset.toRemove.length,

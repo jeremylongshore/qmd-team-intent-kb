@@ -1,8 +1,10 @@
-# CLAUDE.md — qmd-team-intent-kb
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What This Repo Is
 
-A governed team memory platform for Claude Code powered by qmd. This is a TypeScript/Node.js monorepo providing orchestration, governance, lifecycle management, and team-shared memory for Claude Code sessions.
+A governed team memory platform for Claude Code powered by qmd. TypeScript/Node.js monorepo providing orchestration, governance, lifecycle management, and team-shared memory for Claude Code sessions.
 
 **This is not**: a qmd fork, not git-as-database, not prompt-only memory governance.
 
@@ -16,38 +18,153 @@ A governed team memory platform for Claude Code powered by qmd. This is a TypeSc
 6. Default search targets curated knowledge only
 7. Inbox/archive content must not pollute default search
 
-## Monorepo Layout
-
-- `apps/api/` — Control plane REST API
-- `apps/curator/` — Memory promotion, dedupe, supersession engine
-- `apps/edge-daemon/` — Local qmd sync daemon
-- `apps/git-exporter/` — Git mirror/export service
-- `apps/reporting/` — Analytics and lifecycle reporting
-- `packages/schema/` — Shared domain model and validation schemas
-- `packages/qmd-adapter/` — qmd integration adapter
-- `packages/claude-runtime/` — Claude Code session capture runtime
-- `packages/policy-engine/` — Memory governance policy evaluation
-- `packages/repo-resolver/` — Multi-repo context resolver
-- `packages/common/` — Shared utilities
-- `kb-export/` — Git export mirror output
-- `000-docs/` — All durable documentation (flat, numbered)
-- `tests/` — Integration and e2e tests
-- `scripts/` — Build, release, and maintenance scripts
-- `examples/` — Usage examples and sample configurations
-
 ## Build Commands
 
 ```
 pnpm install          # Install all dependencies
-pnpm validate         # Run format:check + lint + typecheck + test
+pnpm validate         # Run format:check + lint + typecheck + test (gate for all PRs)
 pnpm lint             # ESLint across all packages
 pnpm format           # Prettier format
 pnpm format:check     # Prettier check without writing
-pnpm typecheck        # TypeScript type checking
-pnpm test             # Run all tests
-pnpm test:ci          # Run tests in CI mode
+pnpm typecheck        # TypeScript type checking (tsc -b composite build)
+pnpm test             # Run all Vitest tests
+pnpm test:watch       # Vitest in watch mode
 pnpm clean            # Remove all dist/build artifacts
 ```
+
+To run a single test file:
+
+```
+pnpm vitest run packages/schema/src/__tests__/enums.test.ts
+```
+
+To run tests for a single package:
+
+```
+pnpm vitest run packages/schema/
+```
+
+To run apps in dev mode (any app with tsx watch):
+
+```
+cd apps/api && pnpm dev    # tsx watch src/index.ts
+```
+
+## Architecture & Data Flow
+
+### Information Flow (the critical path)
+
+```
+Claude Code session
+  → claude-runtime captures memory candidates, applies secret scanning
+  → writes to local spool directory
+  → curator reads from spool, runs policy-engine evaluation pipeline
+  → passes: promoted to curated memory in store (SQLite)
+  → fails: rejected with audit trail
+  → git-exporter detects changes, writes Markdown+frontmatter to kb-export/
+  → qmd-adapter indexes curated memories for local search
+  → api exposes control plane for CRUD, search, lifecycle transitions
+  → reporting generates analytics from store data
+```
+
+### Dependency Graph
+
+```
+schema (Zod domain model — base of everything)
+  └→ common (Result<T,E>, hashing, paths)
+       ├→ claude-runtime (capture, spool, secret detection)
+       │    └→ policy-engine (8 deterministic rule evaluators)
+       │         └→ api (Fastify REST) + curator (promotion pipeline)
+       ├→ store (SQLite via better-sqlite3, 5 repositories)
+       │    └→ api + curator + git-exporter + reporting
+       └→ qmd-adapter (CLI wrapper, search, index lifecycle)
+            └→ api (search delegation)
+```
+
+Packages import UP this graph only — never circular. `schema` and `common` have no internal deps.
+
+### Domain Model (packages/schema)
+
+Core types defined as Zod schemas with derived TypeScript types:
+
+- **MemoryCandidate** — Raw proposals in the inbox (status: inbox)
+- **CuratedMemory** — Promoted, governed knowledge with lifecycle state
+- **GovernancePolicy** — Configurable rule sets per tenant
+- **AuditEvent** — Immutable trail of all memory operations
+- **SearchQuery/SearchResult** — Typed search with scope control
+
+Key enums: `MemoryLifecycleState` (active/deprecated/superseded/archived), `Sensitivity` (public/internal/confidential/restricted), `MemoryCategory`, `TrustLevel`, `CandidateStatus`, `SearchScope`
+
+**Lifecycle state machine** (`packages/schema/src/lifecycle.ts`):
+
+```
+active → [deprecated, superseded, archived]
+deprecated → [active, archived]
+superseded → [archived]
+archived → [] (terminal)
+```
+
+### Store (packages/store)
+
+SQLite via better-sqlite3 with 5 tables: `candidates`, `curated_memories`, `governance_policies`, `audit_events`, `export_state`. Each has a repository class. Use `createTestDatabase()` for in-memory test databases.
+
+### Policy Engine (packages/policy-engine)
+
+`PolicyPipeline` composes rules and short-circuits on first failure. Rules are registered in `RULE_REGISTRY` keyed by `PolicyRuleType` enum. Current rules: secret-detection, content-length, source-trust, relevance-score, dedup-check, tenant-match, sensitivity-gate, content-sanitization.
+
+### API (apps/api)
+
+Fastify 5 with dependency injection via `buildApp(deps: AppDependencies)`. Middleware stack: rate-limiter → api-key-auth → input-sanitizer. Routes: `/api/candidates`, `/api/memories`, `/api/policies`, `/api/audit`, `/health`.
+
+### Curator (apps/curator)
+
+Orchestrates the full promotion pipeline: spool intake → policy evaluation → dedup check (content hash) → supersession detection (Jaccard title similarity) → promote or reject. Supports dry-run mode.
+
+### Git Exporter (apps/git-exporter)
+
+Incremental export of curated memories to `kb-export/` as Markdown with YAML frontmatter. Category-based directory routing (decisions/, curated/, guides/, archive/). Tracks last export timestamp via `ExportStateRepository`.
+
+## Monorepo Layout
+
+- `apps/api/` — Control plane REST API (Fastify)
+- `apps/curator/` — Memory promotion, dedupe, supersession engine
+- `apps/edge-daemon/` — Local qmd sync daemon (**scaffolded**)
+- `apps/git-exporter/` — Git mirror/export service
+- `apps/reporting/` — Analytics and lifecycle reporting
+- `packages/schema/` — Zod domain model, lifecycle state machine
+- `packages/store/` — SQLite persistence layer (better-sqlite3)
+- `packages/qmd-adapter/` — qmd CLI wrapper, search, index management
+- `packages/claude-runtime/` — Session capture, secret scanning, spool
+- `packages/policy-engine/` — Deterministic governance rule pipeline
+- `packages/repo-resolver/` — Multi-repo context resolver (**scaffolded**)
+- `packages/common/` — Result type, hashing, path utilities
+
+**Still scaffolded** (TODO placeholder only): `packages/repo-resolver`, `apps/edge-daemon`
+
+## Code Conventions
+
+- **TypeScript strict mode** with `noUnusedLocals`, `noUnusedParameters`, `noUncheckedIndexedAccess`
+- **Module system**: NodeNext (ESM with `.js` extensions in imports)
+- **Prettier**: single quotes, trailing commas, 100 char width, 2-space indent
+- **ESLint**: typescript-eslint recommended, unused vars prefixed with `_`
+- **Testing**: Vitest with co-located `__tests__/` directories, deterministic time injection via `nowFn` parameters
+- **No external YAML library**: frontmatter is string-templated in git-exporter
+
+## Testing
+
+- Unit tests: Vitest, co-located with source in `__tests__/` dirs
+- Integration tests: `tests/` directory at repo root
+- All PRs must pass `pnpm validate` before merge
+- Test database helper: `createTestDatabase()` from `packages/store` for in-memory SQLite
+- Temp directories via `mkdtempSync` for spool/file system tests
+
+## CI/CD
+
+- **ci.yml** — Format → Lint → Typecheck → Test (on push to main/develop, PRs to main)
+- **gemini-review.yml** — AI code review via GCP Workload Identity Federation
+- **release.yml** — Dispatch or tag-triggered, validates CHANGELOG and placeholder detection
+- **security.yml** — Weekly npm audit, lockfile integrity, secret scanning
+- **nightly.yml** — Full validation, dependency audit, outdated packages
 
 ## Rules for Working in This Repo
 
@@ -64,9 +181,6 @@ pnpm clean            # Remove all dist/build artifacts
 - Format: `NNN-CC-ABCD-description.md` (e.g., `001-AT-ARCH-repo-blueprint.md`)
 - CC = 2-letter category code (AT, PP, TQ, DR, etc.), ABCD = 4-letter type code (ARCH, PLAN, TEST, etc.)
 - Never create subdirectories under 000-docs
-- Architecture, phase plans, AARs, risk registers, and policy docs go here
-- Ephemeral task notes do NOT go in 000-docs — use Beads instead
-- When filing a new doc, use the next available number and run `/doc-filing` for proper naming
 - See `000-docs/000-INDEX.md` for current inventory
 
 ### Beads Usage
@@ -74,37 +188,20 @@ pnpm clean            # Remove all dist/build artifacts
 - Never code without first marking a Beads task as in_progress
 - Never finish work without closing the Beads task with evidence
 - Always `bd sync` after closing
-- Use `/beads` at session start for context recovery
 - Workflow: `bd update <id> --status in_progress` → work → `bd close <id> --reason "evidence"` → `bd sync`
-
-### Release Hygiene
-
-- Follow Semantic Versioning strictly
-- CHANGELOG.md uses Keep a Changelog format
-- Every user-facing change needs a changelog entry
-- No "misc cleanup" entries — be specific about what changed and why
-- Use `/release` skill for release preparation
-- Prerelease versions for risky changes: `X.Y.Z-alpha.N`
 
 ### Scaffolding vs Implemented
 
-- Be explicit about what is currently scaffolding (placeholder structure) vs implemented (working code)
+- Be explicit about what is currently scaffolding vs implemented
 - Placeholder packages contain only package.json, tsconfig.json, and src/index.ts with a TODO comment
 - Do not claim features work when they are only scaffolded
 - Update `000-docs/004-PP-RMAP-phase-plan.md` when implementation status changes
 
-### Changelog Discipline
+### Release & Changelog
 
-- Update CHANGELOG.md in every PR that adds, changes, or fixes user-facing behavior
-- Use categories: Added, Changed, Fixed, Security, Deprecated, Removed
-- Write human-readable entries from the user's perspective
-- Link to PRs or issues where helpful
-
-### Documentation Updates
-
-- When architecture or phase intent changes, update the relevant 000-docs files
-- Keep `002-AT-ARCH-architecture-overview.md` and `004-PP-RMAP-phase-plan.md` current
-- Produce AARs (After Action Reviews) for significant work milestones — file as next numbered doc in 000-docs
+- Semantic Versioning, CHANGELOG.md in Keep a Changelog format
+- Every user-facing change needs a changelog entry (Added, Changed, Fixed, Security, Deprecated, Removed)
+- Use `/release` skill for release preparation
 
 ### Enterprise Mode Standards
 
@@ -112,17 +209,3 @@ pnpm clean            # Remove all dist/build artifacts
 - All PRs require review (human + Gemini automated review)
 - Security considerations documented for every new subsystem
 - Dependency updates reviewed, not auto-merged
-- Secrets never committed — use environment variables and GitHub secrets
-
-## Testing
-
-- Unit tests: Vitest, co-located with source in `__tests__/` dirs
-- Integration tests: `tests/` directory at repo root
-- All PRs must pass `pnpm validate` before merge
-- Coverage targets will be set per-package as implementation progresses
-
-## GCP Integration
-
-- Gemini code review runs on all PRs via GitHub Actions + Workload Identity Federation
-- No secrets stored — WIF provides tokenless authentication
-- GCP project and WIF configured via GitHub repository variables

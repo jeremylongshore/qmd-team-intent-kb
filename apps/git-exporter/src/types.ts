@@ -16,6 +16,8 @@ export interface ExportResult {
   archived: string[];
   /** File paths removed */
   removed: string[];
+  /** Memory IDs skipped due to sensitivity restrictions */
+  skipped: string[];
   /** Count of files that didn't need updating */
   unchanged: number;
   totalProcessed: number;

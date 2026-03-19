@@ -6,4 +6,6 @@ export { evaluateSourceTrust } from './rules/source-trust-rule.js';
 export { evaluateRelevanceScore } from './rules/relevance-score-rule.js';
 export { evaluateDedupCheck } from './rules/dedup-check-rule.js';
 export { evaluateTenantMatch } from './rules/tenant-match-rule.js';
+export { evaluateSensitivityGate } from './rules/sensitivity-gate-rule.js';
+export { evaluateContentSanitization } from './rules/content-sanitization-rule.js';
 export { PolicyPipeline } from './pipeline.js';

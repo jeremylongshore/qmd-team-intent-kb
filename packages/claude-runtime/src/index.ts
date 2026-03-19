@@ -19,9 +19,11 @@ export {
 } from './config.js';
 
 // Secret detection
-export { SECRET_PATTERNS } from './secrets/patterns.js';
+export { SECRET_PATTERNS, PII_PATTERNS } from './secrets/patterns.js';
 export { scanForSecrets, hasSecrets } from './secrets/secret-scanner.js';
 export { redactSecrets } from './secrets/redactor.js';
+export { classifyContent } from './secrets/content-classifier.js';
+export type { SensitivityLevel, ContentClassification } from './secrets/content-classifier.js';
 
 // Capture
 export { resolveGitContext, deriveTenantId } from './capture/git-context.js';

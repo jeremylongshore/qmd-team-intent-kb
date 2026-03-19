@@ -1,16 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "pnpm install",
-      "pnpm validate",
-      "pnpm lint",
-      "pnpm format",
-      "pnpm format:check",
-      "pnpm typecheck",
-      "pnpm test",
-      "pnpm clean",
-      "bd *",
-      "git *"
+      "Bash(pnpm install)",
+      "Bash(pnpm validate)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm format)",
+      "Bash(pnpm format:check)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm test)",
+      "Bash(pnpm clean)",
+      "Bash(bd *)",
+      "Bash(git *)"
     ]
   }
 }
