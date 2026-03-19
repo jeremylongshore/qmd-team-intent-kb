@@ -61,7 +61,7 @@ qmd-team-intent-kb/
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/api`          | Control plane REST API. Memory CRUD, search delegation, governance admin, authentication. The central authority for canonical memory state. |
 | `apps/curator`      | Memory promotion engine. Validates candidates against policy, deduplicates, detects supersession, assigns lifecycle states.                 |
-| `apps/edge-daemon`  | Local sync daemon. Replicates canonical store to local qmd indexes with incremental sync and conflict resolution. **(scaffolded)**          |
+| `apps/edge-daemon`  | Local sync daemon with spool watch, curation cycle, staleness sweep, PID locking, and graceful shutdown. Replicates to local qmd indexes.   |
 | `apps/git-exporter` | Publishes curated knowledge to git repos in structured Markdown + frontmatter. Incremental export only.                                     |
 | `apps/reporting`    | Analytics, lifecycle reporting, governance audit trails, and team knowledge dashboards.                                                     |
 
@@ -75,13 +75,13 @@ qmd-team-intent-kb/
 | `packages/policy-engine`  | Evaluates candidates against governance rules. Secret detection, dedup scoring, relevance, tenant isolation. All deterministic. |
 | `packages/store`          | SQLite persistence layer via better-sqlite3. WAL mode, 5 repository classes, in-memory test database helper.                    |
 | `packages/repo-resolver`  | Multi-repo context resolution. Determines project/team ownership and enforces tenant boundaries. **(scaffolded)**               |
-| `packages/common`         | Shared utilities: Result<T, E> type, SHA-256 content hashing, path-safety validation.                                           |
+| `packages/common`         | Shared utilities: Result<T, E> type, SHA-256 content hashing, path-safety validation, freshness scoring with reranking.         |
 
 ## Status
 
-**v0.1.0 — Core platform implemented across Phases 1–8.**
+**v0.2.0 — Core platform with full relevancy lifecycle.**
 
-All core subsystems are functional with 776+ tests passing:
+All core subsystems are functional with 867 tests passing:
 
 - **Schema & Domain Model** — Zod schemas, lifecycle state machine, 12 enum types (Phase 1)
 - **Claude Runtime Capture** — Session capture, local JSONL spool, 11-pattern secret detection (Phase 2)
@@ -94,7 +94,7 @@ All core subsystems are functional with 776+ tests passing:
 - **Reporting** — Lifecycle analytics, aggregators, formatters (Phase 7)
 - **Security Hardening** — API middleware (rate-limiter, auth, input sanitizer), content classifier, export gating, path-safety (Phase 8)
 
-**Not yet implemented** (deferred to post-v1): `apps/edge-daemon` (local qmd sync daemon), `packages/repo-resolver` (multi-repo context resolution).
+**Not yet implemented** (deferred to post-v1): `packages/repo-resolver` (multi-repo context resolution).
 
 ## Getting Started
 

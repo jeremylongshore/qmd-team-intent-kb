@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Search API endpoint (`POST /api/search`) with freshness-aware reranking combining raw scores with exponential time decay and category boost
+- Edge daemon (`apps/edge-daemon`) with full implementation: local spool watch, curation cycle, staleness sweep, index sync, PID locking, graceful shutdown
+- Staleness automation — auto-deprecate active memories older than configurable `staleDays` threshold with audit trail
+- Freshness scoring utilities (`packages/common`) with exponential decay, category boost weights, and generic reranking function
+- SQL text search on MemoryRepository with LIKE-based query, tenant/category filters, active-only scope
+- Graduated relevance scoring in policy engine: content length tiers, unique word count signal, manual/import source bonus
+
+### Changed
+
+- Relevance score rule now uses graduated weights: title (+0.20), content 50-200 chars (+0.10), content >200 chars (+0.20), unique words >15 (+0.10), manual/import source (+0.10)
+- Upgraded Vitest to v4.1, ESLint to v10, Zod to v4, @types/node to v25
+- Added `vitest.config.ts` for explicit test file discovery
+
+### Fixed
+
+- TypeScript project references now properly configured across all packages
+
+---
+
+## [0.1.0] - 2026-03-19
+
+### Added
+
 - API middleware stack: rate-limiter (sliding window), API key authentication, input sanitizer with recursive traversal (Phase 8, 76 tests)
 - Content classifier with sensitivity-gate and content-sanitization policy rules (Phase 8)
 - Export gating — git-exporter respects sensitivity classification (Phase 8)
