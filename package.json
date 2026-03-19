@@ -1,6 +1,6 @@
 {
   "name": "@qmd-team-intent-kb/root",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Governed team memory platform for Claude Code powered by qmd",
   "author": "Jeremy Longshore",
@@ -19,6 +19,8 @@
     "test:watch": "vitest",
     "test:ci": "vitest run",
     "build": "tsc -b",
+    "dev:api": "cd apps/api && pnpm dev",
+    "build:check": "tsc -b --noEmit",
     "clean": "rm -rf node_modules dist coverage **/dist **/node_modules **/*.tsbuildinfo",
     "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
   },

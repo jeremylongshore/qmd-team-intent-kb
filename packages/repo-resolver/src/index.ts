@@ -1,3 +1,3 @@
-// TODO: Multi-repo context resolver for cross-project memory (Phase 5)
+// TODO: Multi-repo context resolver — deferred to post-v1
 
 export const name = '@qmd-team-intent-kb/repo-resolver';
