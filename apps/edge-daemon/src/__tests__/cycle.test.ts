@@ -2,8 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { randomUUID } from 'node:crypto';
 import { createTestDatabase } from '@qmd-team-intent-kb/store';
 import type Database from 'better-sqlite3';
+import { computeContentHash } from '@qmd-team-intent-kb/common';
+import type { CuratedMemory } from '@qmd-team-intent-kb/schema';
 import { runCycle } from '../cycle.js';
 import type { DaemonConfig, DaemonDependencies } from '../types.js';
 import {
@@ -218,6 +221,92 @@ describe('runCycle', () => {
     const result = await runCycle(timedConfig, deps, logger);
     expect(result.startedAt).toBe('2026-01-15T10:00:01.000Z');
     expect(result.completedAt).toBe('2026-01-15T10:00:02.000Z');
+  });
+
+  it('staleness sweep deprecates stale memories when enabled', async () => {
+    const content = 'Stale memory content for testing staleness sweep.';
+    const staleMemory: CuratedMemory = {
+      id: randomUUID(),
+      candidateId: randomUUID(),
+      source: 'claude_session',
+      content,
+      title: 'Stale test memory',
+      category: 'pattern',
+      trustLevel: 'high',
+      sensitivity: 'internal',
+      author: { type: 'human', id: 'user-1', name: 'Test User' },
+      tenantId: TENANT,
+      metadata: { filePaths: [], tags: [] },
+      lifecycle: 'active',
+      contentHash: computeContentHash(content),
+      policyEvaluations: [],
+      promotedAt: '2025-06-01T00:00:00.000Z',
+      promotedBy: { type: 'human', id: 'user-1', name: 'Test User' },
+      updatedAt: '2025-06-01T00:00:00.000Z',
+      version: 1,
+    };
+    deps.memoryRepo.insert(staleMemory);
+
+    const stalenessConfig = makeConfig({
+      spoolDir,
+      enableStalenessSweep: true,
+      staleDays: 90,
+    });
+
+    const result = await runCycle(stalenessConfig, deps, logger);
+    expect(result.staleness).not.toBeNull();
+    expect(result.staleness!.deprecated).toBe(1);
+
+    const found = deps.memoryRepo.findById(staleMemory.id);
+    expect(found?.lifecycle).toBe('deprecated');
+  });
+
+  it('staleness sweep skips when disabled', async () => {
+    const stalenessConfig = makeConfig({
+      spoolDir,
+      enableStalenessSweep: false,
+    });
+
+    const result = await runCycle(stalenessConfig, deps, logger);
+    expect(result.staleness).toBeNull();
+  });
+
+  it('staleness sweep creates audit events', async () => {
+    const content = 'Stale memory content for audit event verification test.';
+    const staleMemory: CuratedMemory = {
+      id: randomUUID(),
+      candidateId: randomUUID(),
+      source: 'claude_session',
+      content,
+      title: 'Stale audit test memory',
+      category: 'convention',
+      trustLevel: 'high',
+      sensitivity: 'internal',
+      author: { type: 'human', id: 'user-1', name: 'Test User' },
+      tenantId: TENANT,
+      metadata: { filePaths: [], tags: [] },
+      lifecycle: 'active',
+      contentHash: computeContentHash(content),
+      policyEvaluations: [],
+      promotedAt: '2025-06-01T00:00:00.000Z',
+      promotedBy: { type: 'human', id: 'user-1', name: 'Test User' },
+      updatedAt: '2025-06-01T00:00:00.000Z',
+      version: 1,
+    };
+    deps.memoryRepo.insert(staleMemory);
+
+    const stalenessConfig = makeConfig({
+      spoolDir,
+      enableStalenessSweep: true,
+      staleDays: 90,
+    });
+
+    await runCycle(stalenessConfig, deps, logger);
+
+    const events = deps.auditRepo.findByMemory(staleMemory.id);
+    expect(events).toHaveLength(1);
+    expect(events[0]?.action).toBe('demoted');
+    expect(events[0]?.reason).toContain('Auto-deprecated');
   });
 
   it('does not call memoryRepo.insert directly (governance bypass prevention)', async () => {

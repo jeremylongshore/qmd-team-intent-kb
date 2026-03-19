@@ -8,6 +8,8 @@ const DEFAULTS = {
   maxSpoolFileSizeBytes: 10 * 1024 * 1024, // 10MB
   enableExport: true,
   enableIndexUpdate: true,
+  enableStalenessSweep: true,
+  staleDays: 90,
   exportOutputDir: 'kb-export/',
   exportTargetId: 'kb-export-default',
   supersessionThreshold: 0.6,
@@ -23,6 +25,8 @@ const DEFAULTS = {
  *   DAEMON_MAX_SPOOL_SIZE  — max spool file size in bytes (default 10MB)
  *   DAEMON_ENABLE_EXPORT   — 'true'/'false' (default true)
  *   DAEMON_ENABLE_INDEX    — 'true'/'false' (default true)
+ *   DAEMON_ENABLE_STALENESS — 'true'/'false' (default true)
+ *   DAEMON_STALE_DAYS      — days before auto-deprecation (default 90)
  *   DAEMON_SPOOL_DIR       — spool directory path
  *   DAEMON_EXPORT_DIR      — export output directory
  *   DAEMON_EXPORT_TARGET   — export target identifier
@@ -54,6 +58,8 @@ export function loadDaemonConfig(
     maxSpoolFileSizeBytes,
     enableExport: parseBool(env['DAEMON_ENABLE_EXPORT'], DEFAULTS.enableExport),
     enableIndexUpdate: parseBool(env['DAEMON_ENABLE_INDEX'], DEFAULTS.enableIndexUpdate),
+    enableStalenessSweep: parseBool(env['DAEMON_ENABLE_STALENESS'], DEFAULTS.enableStalenessSweep),
+    staleDays: parsePositiveInt(env['DAEMON_STALE_DAYS'], DEFAULTS.staleDays),
     spoolDir: env['DAEMON_SPOOL_DIR'] ?? undefined,
     exportOutputDir: env['DAEMON_EXPORT_DIR'] ?? DEFAULTS.exportOutputDir,
     exportTargetId: env['DAEMON_EXPORT_TARGET'] ?? DEFAULTS.exportTargetId,

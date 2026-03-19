@@ -76,4 +76,20 @@ describe('loadDaemonConfig', () => {
     });
     expect(config.maxCandidatesPerCycle).toBe(50);
   });
+
+  it('parses staleness sweep config from env', () => {
+    const config = loadDaemonConfig({
+      DAEMON_TENANT_ID: 'team',
+      DAEMON_ENABLE_STALENESS: 'false',
+      DAEMON_STALE_DAYS: '30',
+    });
+    expect(config.enableStalenessSweep).toBe(false);
+    expect(config.staleDays).toBe(30);
+  });
+
+  it('defaults staleness sweep to enabled with 90 days', () => {
+    const config = loadDaemonConfig({ DAEMON_TENANT_ID: 'team' });
+    expect(config.enableStalenessSweep).toBe(true);
+    expect(config.staleDays).toBe(90);
+  });
 });

@@ -22,6 +22,10 @@ export interface DaemonConfig {
   enableExport: boolean;
   /** Whether to update qmd index after export. Default true. */
   enableIndexUpdate: boolean;
+  /** Whether to run staleness sweep. Default true. */
+  enableStalenessSweep: boolean;
+  /** Number of days before active memories are auto-deprecated. Default 90. */
+  staleDays: number;
   /** Spool directory path. Default ~/.teamkb/spool/. */
   spoolDir?: string;
   /** Export output directory. Default kb-export/. */
@@ -59,12 +63,20 @@ export interface IndexUpdateResult {
   error?: string;
 }
 
+/** Result of a staleness sweep step */
+export interface StalenessSweepResult {
+  scanned: number;
+  deprecated: number;
+  errors: string[];
+}
+
 /** Aggregate result of one full daemon cycle */
 export interface CycleResult {
   startedAt: string;
   completedAt: string;
   ingest: IngestStepResult;
   curation: CurationBatchResult | null;
+  staleness: StalenessSweepResult | null;
   export: ExportResult | null;
   indexUpdate: IndexUpdateResult | null;
 }

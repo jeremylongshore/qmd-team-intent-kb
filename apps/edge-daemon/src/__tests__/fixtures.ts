@@ -84,6 +84,8 @@ export function makeConfig(overrides?: Partial<DaemonConfig>): DaemonConfig {
     maxSpoolFileSizeBytes: 10 * 1024 * 1024,
     enableExport: false, // default off in tests — no filesystem side effects
     enableIndexUpdate: false,
+    enableStalenessSweep: false, // default off in tests
+    staleDays: 90,
     exportOutputDir: 'kb-export/',
     exportTargetId: 'kb-export-default',
     supersessionThreshold: 0.6,

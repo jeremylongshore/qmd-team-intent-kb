@@ -5,6 +5,7 @@ import { ingestFromSpool, Curator } from '@qmd-team-intent-kb/curator';
 import { runExport } from '@qmd-team-intent-kb/git-exporter';
 import type { MemoryCandidate } from '@qmd-team-intent-kb/schema';
 import type { DaemonConfig, DaemonDependencies, CycleResult, DaemonLogger } from './types.js';
+import { runStalenessSweep } from './staleness.js';
 
 /**
  * Check if enterprise managed settings disable memory capture.
@@ -45,6 +46,7 @@ export async function runCycle(
     completedAt: '',
     ingest: { ingested: 0, errors: [] },
     curation: null,
+    staleness: null,
     export: null,
     indexUpdate: null,
   };
@@ -102,6 +104,26 @@ export async function runCycle(
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       logger.error(`Curation error: ${msg}`);
+    }
+  }
+
+  // Step 2b: Staleness sweep — auto-deprecate stale active memories
+  if (config.enableStalenessSweep) {
+    try {
+      result.staleness = runStalenessSweep(
+        deps.memoryRepo,
+        deps.auditRepo,
+        { tenantId: config.tenantId, staleDays: config.staleDays },
+        nowFn,
+      );
+      if (result.staleness.deprecated > 0) {
+        logger.info(
+          `Staleness sweep: ${result.staleness.deprecated} of ${result.staleness.scanned} deprecated`,
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error(`Staleness sweep error: ${msg}`);
     }
   }
 
