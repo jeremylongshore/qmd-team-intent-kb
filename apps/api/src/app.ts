@@ -11,11 +11,13 @@ import { CandidateService } from './services/candidate-service.js';
 import { MemoryService } from './services/memory-service.js';
 import { PolicyService } from './services/policy-service.js';
 import { HealthService } from './services/health-service.js';
+import { SearchService } from './services/search-service.js';
 import { registerCandidateRoutes } from './routes/candidates.js';
 import { registerMemoryRoutes } from './routes/memories.js';
 import { registerPolicyRoutes } from './routes/policies.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerAuditRoutes } from './routes/audit.js';
+import { registerSearchRoutes } from './routes/search.js';
 import { registerRateLimiter } from './middleware/rate-limiter.js';
 import { registerApiKeyAuth } from './middleware/api-key-auth.js';
 import { registerInputSanitizer } from './middleware/input-sanitizer.js';
@@ -63,6 +65,7 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   const memoryService = new MemoryService(memoryRepo, auditRepo);
   const policyService = new PolicyService(policyRepo);
   const healthService = new HealthService(deps.db);
+  const searchService = new SearchService(memoryRepo);
 
   // Routes
   registerHealthRoutes(app, healthService);
@@ -70,6 +73,7 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   registerMemoryRoutes(app, memoryService);
   registerPolicyRoutes(app, policyService);
   registerAuditRoutes(app, auditRepo);
+  registerSearchRoutes(app, searchService);
 
   return app;
 }
