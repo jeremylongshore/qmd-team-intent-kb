@@ -89,6 +89,7 @@ export class MemoryService {
     });
     this.auditRepo.insert(auditEvent);
 
-    return this.getById(id);
+    // Return the updated memory without a second DB fetch
+    return { ...memory, lifecycle: to, updatedAt: now } as CuratedMemory;
   }
 }

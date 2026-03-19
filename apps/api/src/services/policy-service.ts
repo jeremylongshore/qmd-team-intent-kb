@@ -53,8 +53,6 @@ export class PolicyService {
     if (!parsed.success) {
       throw badRequest(`Invalid policy update: ${parsed.error.message}`);
     }
-    // Ensure the record exists first
-    this.getById(id);
     // Enforce URL id wins over body id
     const updated: GovernancePolicy = { ...parsed.data, id };
     const changed = this.repo.update(updated);
