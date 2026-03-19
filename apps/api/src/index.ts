@@ -7,3 +7,4 @@ export { CandidateService } from './services/candidate-service.js';
 export { MemoryService } from './services/memory-service.js';
 export { PolicyService } from './services/policy-service.js';
 export { HealthService } from './services/health-service.js';
+export { SearchService } from './services/search-service.js';
