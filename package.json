@@ -23,7 +23,7 @@
     "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
   },
   "devDependencies": {
-    "@types/node": "^22.13.0",
+    "@types/node": "^25.5.0",
     "eslint": "^9.20.0",
     "prettier": "^3.5.0",
     "typescript": "^5.7.0",
