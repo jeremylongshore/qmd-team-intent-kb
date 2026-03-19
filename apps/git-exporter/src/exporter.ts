@@ -1,5 +1,14 @@
 import type { MemoryRepository, ExportStateRepository } from '@qmd-team-intent-kb/store';
+import { Sensitivity } from '@qmd-team-intent-kb/schema';
 import type { ExportConfig, ExportResult } from './types.js';
+
+/** Sensitivity threshold: memories at or above 'confidential' are skipped */
+const CONFIDENTIAL_INDEX = Sensitivity.options.indexOf('confidential');
+
+function isSensitivityRestricted(level: string): boolean {
+  const idx = Sensitivity.options.indexOf(level as (typeof Sensitivity.options)[number]);
+  return idx >= CONFIDENTIAL_INDEX;
+}
 import { detectChanges } from './diff/change-detector.js';
 import { formatMemoryAsMarkdown } from './formatter/markdown-formatter.js';
 import { writeFile, archiveFile, removeFile } from './writer/file-writer.js';
@@ -37,7 +46,7 @@ export function runExport(
 
   // Write new/updated files (skip restricted/confidential)
   for (const item of changeset.toWrite) {
-    if (item.memory.sensitivity === 'restricted' || item.memory.sensitivity === 'confidential') {
+    if (isSensitivityRestricted(item.memory.sensitivity)) {
       skipped.push(item.memory.id);
       continue;
     }
@@ -58,7 +67,7 @@ export function runExport(
 
   // Move archived/superseded files from category dir → archive/ (skip restricted/confidential)
   for (const item of changeset.toArchive) {
-    if (item.memory.sensitivity === 'restricted' || item.memory.sensitivity === 'confidential') {
+    if (isSensitivityRestricted(item.memory.sensitivity)) {
       skipped.push(item.memory.id);
       continue;
     }

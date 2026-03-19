@@ -47,7 +47,12 @@ export function evaluateContentSanitization(
   _context: EvaluationContext,
 ): RuleResult {
   const params = rule.parameters as Record<string, unknown> | undefined;
-  const enabledPatternIds = params?.['enabledPatterns'] as string[] | undefined;
+  const enabledPatternIds =
+    params && Array.isArray(params['enabledPatterns'])
+      ? (params['enabledPatterns'].filter((v): v is string => typeof v === 'string') as
+          | string[]
+          | undefined)
+      : undefined;
 
   const patterns =
     enabledPatternIds !== undefined

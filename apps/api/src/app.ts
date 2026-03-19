@@ -44,7 +44,8 @@ export interface AppDependencies {
  * starting the server or using `inject()` for testing.
  */
 export function buildApp(deps: AppDependencies): FastifyInstance {
-  const app = Fastify({ logger: deps.silent !== false ? false : true });
+  const bodyLimit = deps.maxBodySize ?? 1_048_576;
+  const app = Fastify({ logger: deps.silent !== false ? false : true, bodyLimit });
 
   // Middleware (order: rate-limiter → auth → sanitizer → routes)
   registerRateLimiter(app, deps.rateLimitMax ?? 100, deps.rateLimitWindowMs ?? 60000);
