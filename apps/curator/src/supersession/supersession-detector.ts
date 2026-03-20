@@ -27,8 +27,8 @@ export function detectSupersession(
   threshold: number = 0.6,
 ): SupersessionMatch | null {
   const existingMemories = memoryRepo
-    .findByTenant(candidate.tenantId)
-    .filter((m) => m.lifecycle === 'active' && m.category === candidate.category);
+    .findByTenantAndLifecycle(candidate.tenantId, 'active')
+    .filter((m) => m.category === candidate.category);
 
   let bestMatch: SupersessionMatch | null = null;
 

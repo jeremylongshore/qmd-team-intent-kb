@@ -15,3 +15,5 @@ export { ConsoleDaemonLogger, NullLogger } from './health.js';
 export { runCycle } from './cycle.js';
 export { runStalenessSweep } from './staleness.js';
 export { EdgeDaemon } from './daemon.js';
+export { writeFeedback, readRecentFeedback, getFeedbackPath } from './feedback.js';
+export type { FeedbackEntry } from './feedback.js';

@@ -342,7 +342,11 @@ describe('Curator.processBatch', () => {
 
   it('dry run mode returns same outcomes but does not persist', () => {
     const curator = new Curator(deps, { tenantId: TENANT, dryRun: true });
-    const candidates = [makeCandidate(), makeCandidate()];
+    // Use distinct content so intra-batch dedup doesn't catch the second
+    const candidates = [
+      makeCandidate({ content: 'First unique candidate with enough content for length check.' }),
+      makeCandidate({ content: 'Second unique candidate with enough content for length check.' }),
+    ];
     const result = curator.processBatch(candidates);
 
     // Outcomes are computed

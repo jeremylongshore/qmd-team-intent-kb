@@ -44,9 +44,11 @@ export class Curator {
   /**
    * Process a single candidate through the full governance pipeline.
    *
+   * @param existingHashes - Pre-loaded set of content hashes (hoisted from batch).
+   *                         When provided, avoids N+1 queries against the store.
    * @returns A CurationResult describing the outcome.
    */
-  processSingle(candidate: MemoryCandidate): CurationResult {
+  processSingle(candidate: MemoryCandidate, existingHashes?: Set<string>): CurationResult {
     // Step 1: Compute content hash
     const contentHash = computeContentHash(candidate.content);
 
@@ -57,6 +59,15 @@ export class Curator {
         candidateId: candidate.id,
         outcome: 'duplicate',
         reason: `Exact duplicate of memory ${dedup.matchedMemoryId}`,
+      };
+    }
+
+    // Intra-batch dedup: check if this hash was already promoted in the current batch
+    if (existingHashes?.has(contentHash)) {
+      return {
+        candidateId: candidate.id,
+        outcome: 'duplicate',
+        reason: 'Intra-batch duplicate (same content already promoted in this batch)',
       };
     }
 
@@ -73,11 +84,11 @@ export class Curator {
       });
     }
 
-    // Step 4: Run policy pipeline
+    // Step 4: Run policy pipeline (uses pre-loaded hashes to avoid N+1)
     const pipeline = new PolicyPipeline(policy);
-    const existingHashes = new Set(this.deps.memoryRepo.getAllContentHashes());
+    const hashSet = existingHashes ?? new Set(this.deps.memoryRepo.getAllContentHashes());
     const pipelineResult = pipeline.evaluate(candidate, {
-      existingHashes,
+      existingHashes: hashSet,
       tenantId: this.config.tenantId,
     });
 
@@ -110,7 +121,9 @@ export class Curator {
   /**
    * Process a batch of candidates through the pipeline.
    *
-   * Candidates are processed in order; each is independent of the others.
+   * Content hashes are loaded once before the loop (not per-candidate) to avoid
+   * N+1 queries. The hash set is updated after each promotion to catch intra-batch
+   * duplicates.
    */
   processBatch(candidates: MemoryCandidate[]): CurationBatchResult {
     const results: CurationResult[] = [];
@@ -119,13 +132,18 @@ export class Curator {
     let flagged = 0;
     let duplicates = 0;
 
+    // Hoist hash loading out of the per-candidate loop
+    const existingHashes = new Set(this.deps.memoryRepo.getAllContentHashes());
+
     for (const candidate of candidates) {
-      const result = this.processSingle(candidate);
+      const result = this.processSingle(candidate, existingHashes);
       results.push(result);
 
       switch (result.outcome) {
         case 'promoted':
           promoted++;
+          // Update intra-batch hash set so subsequent candidates catch duplicates
+          existingHashes.add(computeContentHash(candidate.content));
           break;
         case 'rejected':
           rejected++;
