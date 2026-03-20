@@ -61,6 +61,7 @@ function rowToMemory(row: MemoryRow): CuratedMemory {
  */
 export class MemoryRepository {
   private readonly db: Database.Database;
+  private readonly hasFts5: boolean;
   private readonly stmtInsert: Database.Statement;
   private readonly stmtFindById: Database.Statement;
   private readonly stmtFindByTenant: Database.Statement;
@@ -78,6 +79,16 @@ export class MemoryRepository {
 
   constructor(db: Database.Database) {
     this.db = db;
+
+    // Detect FTS5 availability — the virtual table may not exist on older DBs
+    try {
+      db.prepare(
+        "SELECT 1 FROM curated_memories_fts WHERE curated_memories_fts MATCH 'test' LIMIT 0",
+      ).run();
+      this.hasFts5 = true;
+    } catch {
+      this.hasFts5 = false;
+    }
 
     this.stmtInsert = db.prepare(`
       INSERT INTO curated_memories (
@@ -315,12 +326,60 @@ export class MemoryRepository {
 
   /**
    * Search active curated memories by text match on title and content.
-   * Uses SQL LIKE for lightweight search — no FTS5 dependency.
+   *
+   * Uses FTS5 MATCH when the virtual table is available (faster, ranked).
+   * Falls back to LIKE search with escaped wildcards when FTS5 is not present.
    * Results capped at 100 rows.
    */
   searchByText(query: string, tenantId?: string, categories?: string[]): CuratedMemory[] {
-    const conditions = ["lifecycle = 'active'", '(title LIKE @pattern OR content LIKE @pattern)'];
-    const params: Record<string, string> = { pattern: `%${query}%` };
+    if (this.hasFts5) {
+      return this.searchByFts5(query, tenantId, categories);
+    }
+    return this.searchByLike(query, tenantId, categories);
+  }
+
+  /** FTS5-based search using MATCH for ranked full-text results */
+  private searchByFts5(query: string, tenantId?: string, categories?: string[]): CuratedMemory[] {
+    // Escape FTS5 special characters: " * ^ ( ) { } : -> NOT AND OR NEAR
+    const ftsQuery = query.replace(/[*"^(){}:]/g, '').trim();
+    if (ftsQuery.length === 0) return [];
+
+    const conditions = ["cm.lifecycle = 'active'"];
+    const params: Record<string, string> = { query: ftsQuery };
+
+    if (tenantId !== undefined) {
+      conditions.push('cm.tenant_id = @tenantId');
+      params['tenantId'] = tenantId;
+    }
+
+    if (categories !== undefined && categories.length > 0) {
+      const placeholders = categories.map((_, i) => `@cat${i}`);
+      conditions.push(`cm.category IN (${placeholders.join(', ')})`);
+      categories.forEach((cat, i) => {
+        params[`cat${i}`] = cat;
+      });
+    }
+
+    const sql = `
+      SELECT cm.* FROM curated_memories cm
+      JOIN curated_memories_fts fts ON cm.rowid = fts.rowid
+      WHERE curated_memories_fts MATCH @query
+        AND ${conditions.join(' AND ')}
+      ORDER BY rank
+      LIMIT 100
+    `;
+    const rows = this.db.prepare(sql).all(params) as MemoryRow[];
+    return rows.map(rowToMemory);
+  }
+
+  /** LIKE-based fallback search with escaped wildcards */
+  private searchByLike(query: string, tenantId?: string, categories?: string[]): CuratedMemory[] {
+    const escapedQuery = query.replace(/[%_\\]/g, '\\$&');
+    const conditions = [
+      "lifecycle = 'active'",
+      "(title LIKE @pattern ESCAPE '\\' OR content LIKE @pattern ESCAPE '\\')",
+    ];
+    const params: Record<string, string> = { pattern: `%${escapedQuery}%` };
 
     if (tenantId !== undefined) {
       conditions.push('tenant_id = @tenantId');

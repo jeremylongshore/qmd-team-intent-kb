@@ -15,9 +15,9 @@ export class SearchClient {
   ): Promise<Result<QmdSearchResult[], QmdError>> {
     const collections = this.resolveCollections(scope);
 
-    const args = ['search', query];
-    // qmd search doesn't have a --collection flag per se,
-    // but we filter results by collection post-query for scope enforcement
+    // Use '--' to terminate option parsing so query strings like '--version'
+    // are not interpreted as CLI flags
+    const args = ['search', '--', query];
     const result = await this.executor.execute(args);
 
     if (result.exitCode !== 0) {
