@@ -1,0 +1,12 @@
+{
+  "name": "qmd-team-intent-kb",
+  "version": "0.3.0",
+  "description": "Governed team memory — deterministic policy, lifecycle, team sharing via qmd",
+  "author": {
+    "name": "Intent Solutions",
+    "url": "https://github.com/jeremylongshore"
+  },
+  "repository": "https://github.com/jeremylongshore/qmd-team-intent-kb",
+  "license": "UNLICENSED",
+  "keywords": ["memory", "team", "knowledge", "governance", "qmd"]
+}

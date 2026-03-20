@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/bootstrap.sh",
+            "timeout": 30,
+            "statusMessage": "Initializing team knowledge base..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/flush-spool.sh",
+            "timeout": 60,
+            "statusMessage": "Flushing knowledge spool..."
+          }
+        ]
+      }
+    ]
+  }
+}

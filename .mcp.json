@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "teamkb": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/apps/mcp-server/dist/index.js"],
+      "env": {
+        "TEAMKB_TENANT_ID": "${TEAMKB_TENANT_ID}"
+      }
+    }
+  }
+}
