@@ -1,0 +1,36 @@
+{
+  "name": "@qmd-team-intent-kb/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "teamkb-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@qmd-team-intent-kb/schema": "workspace:*",
+    "@qmd-team-intent-kb/common": "workspace:*",
+    "@qmd-team-intent-kb/store": "workspace:*",
+    "@qmd-team-intent-kb/claude-runtime": "workspace:*",
+    "@qmd-team-intent-kb/edge-daemon": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0"
+  }
+}

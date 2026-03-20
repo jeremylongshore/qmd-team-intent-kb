@@ -12,6 +12,7 @@
     { "path": "apps/curator" },
     { "path": "apps/edge-daemon" },
     { "path": "apps/git-exporter" },
-    { "path": "apps/reporting" }
+    { "path": "apps/reporting" },
+    { "path": "apps/mcp-server" }
   ]
 }
