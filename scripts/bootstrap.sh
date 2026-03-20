@@ -16,7 +16,7 @@ chmod 700 "$TEAMKB_DIR" "$SPOOL_DIR" "$FEEDBACK_DIR"
 if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
   INIT_SCRIPT="$CLAUDE_PLUGIN_DATA/init-db.js"
 else
-  INIT_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}/apps/mcp-server/dist/init-db.js"
+  INIT_SCRIPT="${CLAUDE_PLUGIN_ROOT:-.}/apps/mcp-server/dist/init-db.js"
 fi
 
 if [ -f "$INIT_SCRIPT" ]; then
@@ -31,4 +31,8 @@ if command -v qmd &>/dev/null; then
 fi
 
 # 4. Output status as JSON for Claude Code
-echo "{\"status\":\"ok\",\"db\":\"$DB_PATH\",\"qmd\":$(command -v qmd &>/dev/null && echo true || echo false)}"
+QMD_AVAILABLE=false
+if command -v qmd &>/dev/null; then
+  QMD_AVAILABLE=true
+fi
+echo "{\"status\":\"ok\",\"db\":\"$DB_PATH\",\"qmd\":$QMD_AVAILABLE}"

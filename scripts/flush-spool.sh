@@ -7,10 +7,17 @@ set -euo pipefail
 TEAMKB_DIR="${TEAMKB_BASE_PATH:-$HOME/.teamkb}"
 SPOOL_DIR="$TEAMKB_DIR/spool"
 DB_PATH="$TEAMKB_DIR/teamkb.db"
-EXPORT_DIR="${TEAMKB_EXPORT_DIR:-$(pwd)/kb-export}"
+EXPORT_DIR="${TEAMKB_EXPORT_DIR:-./kb-export}"
 
-# Exit early if no spool files
-if [ ! -d "$SPOOL_DIR" ] || [ -z "$(ls -A "$SPOOL_DIR" 2>/dev/null)" ]; then
+# Exit early if no spool files (use glob to avoid command substitution)
+if [ ! -d "$SPOOL_DIR" ]; then
+  echo '{"status":"ok","message":"No spool files to process"}'
+  exit 0
+fi
+shopt -s nullglob
+SPOOL_FILES=("$SPOOL_DIR"/*)
+shopt -u nullglob
+if [ ${#SPOOL_FILES[@]} -eq 0 ]; then
   echo '{"status":"ok","message":"No spool files to process"}'
   exit 0
 fi
@@ -19,7 +26,7 @@ fi
 if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
   CURATOR_SCRIPT="$CLAUDE_PLUGIN_DATA/flush.js"
 else
-  CURATOR_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}/apps/mcp-server/dist/flush.js"
+  CURATOR_SCRIPT="${CLAUDE_PLUGIN_ROOT:-.}/apps/mcp-server/dist/flush.js"
 fi
 
 # Run inline curation if script exists
