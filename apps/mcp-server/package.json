@@ -24,11 +24,12 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
-    "@qmd-team-intent-kb/schema": "workspace:*",
-    "@qmd-team-intent-kb/common": "workspace:*",
-    "@qmd-team-intent-kb/store": "workspace:*",
     "@qmd-team-intent-kb/claude-runtime": "workspace:*",
-    "@qmd-team-intent-kb/edge-daemon": "workspace:*"
+    "@qmd-team-intent-kb/common": "workspace:*",
+    "@qmd-team-intent-kb/edge-daemon": "workspace:*",
+    "@qmd-team-intent-kb/schema": "workspace:*",
+    "@qmd-team-intent-kb/store": "workspace:*",
+    "fast-glob": "^3.3.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0"

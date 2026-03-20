@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join, basename, extname } from 'node:path';
-import { glob } from 'node:fs/promises';
+import fg from 'fast-glob';
 import type { MemoryCandidate } from '@qmd-team-intent-kb/schema';
 import { writeToSpool } from '@qmd-team-intent-kb/claude-runtime';
 import { categorizeFromPath } from '../categorize.js';
@@ -57,11 +57,8 @@ export async function importFiles(
 
   let matchedFiles: string[];
   try {
-    const iter = glob(pattern);
-    matchedFiles = [];
-    for await (const file of iter) {
-      matchedFiles.push(file);
-    }
+    // Use fast-glob which works in Node 20+ (node:fs/promises glob requires Node 22)
+    matchedFiles = await fg(pattern, { onlyFiles: true, absolute: true });
   } catch {
     matchedFiles = [];
   }
