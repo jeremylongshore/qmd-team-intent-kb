@@ -22,8 +22,11 @@ async function main(): Promise<void> {
     process.stderr.write(`[teamkb-mcp] Received ${signal}, shutting down\n`);
     try {
       await server.close();
-    } finally {
       process.exit(0);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      process.stderr.write(`[teamkb-mcp] Error during shutdown: ${msg}\n`);
+      process.exit(1);
     }
   };
 

@@ -20,13 +20,13 @@ else
 fi
 
 if [ -f "$INIT_SCRIPT" ]; then
-  TEAMKB_DB_PATH="$DB_PATH" node "$INIT_SCRIPT" 2>/dev/null || true
+  TEAMKB_DB_PATH="$DB_PATH" node "$INIT_SCRIPT" || true
 fi
 
 # 3. If qmd is installed, ensure governed collections exist
 if command -v qmd &>/dev/null; then
   for collection in kb-curated kb-decisions kb-guides; do
-    qmd collection create "$collection" 2>/dev/null || true
+    qmd collection create "$collection" || true
   done
 fi
 

@@ -34,7 +34,7 @@ if [ -f "$CURATOR_SCRIPT" ]; then
   TEAMKB_DB_PATH="$DB_PATH" \
   TEAMKB_SPOOL_DIR="$SPOOL_DIR" \
   TEAMKB_EXPORT_DIR="$EXPORT_DIR" \
-  node "$CURATOR_SCRIPT" 2>/dev/null || {
+  node "$CURATOR_SCRIPT" || {
     echo '{"status":"error","message":"Curation failed"}'
     exit 0  # Don't block session exit
   }
@@ -42,7 +42,7 @@ fi
 
 # Trigger qmd embed if available
 if command -v qmd &>/dev/null && [ -d "$EXPORT_DIR" ]; then
-  qmd embed 2>/dev/null || true
+  qmd embed || true
 fi
 
 echo '{"status":"ok","message":"Spool flushed"}'
