@@ -90,6 +90,14 @@ CREATE TABLE IF NOT EXISTS export_state (
 );
 `.trim();
 
+const SCHEMA_MIGRATIONS_DDL = `
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`.trim();
+
 /** All DDL statements, each including the CREATE TABLE and its indexes as one string. */
 export const TABLE_DDL: string[] = [
   CANDIDATES_DDL,
@@ -97,4 +105,67 @@ export const TABLE_DDL: string[] = [
   GOVERNANCE_POLICIES_DDL,
   AUDIT_EVENTS_DDL,
   EXPORT_STATE_DDL,
+  SCHEMA_MIGRATIONS_DDL,
+];
+
+/**
+ * Numbered migrations applied incrementally after initial schema creation.
+ * Each migration runs exactly once, tracked by the schema_migrations table.
+ *
+ * IMPORTANT: Never modify existing migrations — only append new ones.
+ */
+export interface Migration {
+  version: number;
+  name: string;
+  sql: string;
+}
+
+export const MIGRATIONS: Migration[] = [
+  {
+    version: 1,
+    name: 'add_compound_indexes',
+    sql: `
+CREATE INDEX IF NOT EXISTS idx_memories_tenant_lifecycle ON curated_memories(tenant_id, lifecycle);
+CREATE INDEX IF NOT EXISTS idx_memories_lifecycle_updated ON curated_memories(lifecycle, updated_at);
+CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_memories_tenant_category ON curated_memories(tenant_id, category);
+    `.trim(),
+  },
+  {
+    version: 2,
+    name: 'add_fts5_search',
+    sql: `
+CREATE VIRTUAL TABLE IF NOT EXISTS curated_memories_fts USING fts5(
+  title,
+  content,
+  content='curated_memories',
+  content_rowid='rowid'
+);
+
+-- Populate FTS from existing data
+INSERT OR IGNORE INTO curated_memories_fts(rowid, title, content)
+  SELECT rowid, title, content FROM curated_memories;
+
+-- Triggers to keep FTS in sync with curated_memories
+CREATE TRIGGER IF NOT EXISTS curated_memories_fts_insert
+AFTER INSERT ON curated_memories BEGIN
+  INSERT INTO curated_memories_fts(rowid, title, content)
+  VALUES (new.rowid, new.title, new.content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS curated_memories_fts_delete
+AFTER DELETE ON curated_memories BEGIN
+  INSERT INTO curated_memories_fts(curated_memories_fts, rowid, title, content)
+  VALUES ('delete', old.rowid, old.title, old.content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS curated_memories_fts_update
+AFTER UPDATE ON curated_memories BEGIN
+  INSERT INTO curated_memories_fts(curated_memories_fts, rowid, title, content)
+  VALUES ('delete', old.rowid, old.title, old.content);
+  INSERT INTO curated_memories_fts(rowid, title, content)
+  VALUES (new.rowid, new.title, new.content);
+END;
+    `.trim(),
+  },
 ];
