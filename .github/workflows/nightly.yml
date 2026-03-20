@@ -1,8 +1,8 @@
 name: Nightly
 
 on:
-  schedule:
-    - cron: '0 4 * * *' # Daily 4am UTC
+  # schedule:
+  #   - cron: '0 4 * * *' # Daily 4am UTC
   workflow_dispatch:
 
 permissions:
