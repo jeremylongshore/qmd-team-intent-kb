@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-19
+
+### Added
+
+- MCP server (`apps/mcp-server`) with 5 tools: `teamkb_propose`, `teamkb_import`, `teamkb_status`, `teamkb_transition`, `teamkb_sync`
+- Claude Code plugin packaging: `.claude-plugin/plugin.json`, `.mcp.json`, `hooks/hooks.json`
+- SessionStart hook (`scripts/bootstrap.sh`) for database initialization and qmd collection setup
+- Stop hook (`scripts/flush-spool.sh`) for end-of-session spool draining
+- TeamKB skill definition (`skills/teamkb/SKILL.md`) for ambient capture guidance
+- 4 subagent definitions: `teamkb-curator`, `teamkb-classifier`, `teamkb-conflict-checker`, `teamkb-scout`
+- Rejection feedback channel (`apps/edge-daemon/src/feedback.ts`) for governance learning
+- FTS5 virtual table for full-text search with ranked results
+- Schema migrations framework (`packages/store`) with `schema_migrations` table
+- Intra-batch deduplication in curator pipeline
+- Path traversal validation in spool writer and git exporter
+- Per-agent spool files for multi-agent concurrency
+
+### Fixed
+
+- Node 20 compatibility using fast-glob instead of node:fs/promises glob (requires Node 22)
+- Timing-safe API key comparison with `crypto.timingSafeEqual`
+- Fail-closed authentication in production mode
+- LIKE wildcard escaping (`%`, `_`, `\`) in SQL text search
+- Shutdown handler exits with non-zero code on failure
+
+### Security
+
+- File permissions 0700 on `~/.teamkb/` directory
+- `busy_timeout = 5000` pragma for WAL mode concurrency
+- `--` argument separator for qmd CLI commands
+
+---
+
+## [0.2.0] - 2026-03-19
+
 ### Added
 
 - Search API endpoint (`POST /api/search`) with freshness-aware reranking combining raw scores with exponential time decay and category boost
