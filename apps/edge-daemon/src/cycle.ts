@@ -6,6 +6,7 @@ import { runExport } from '@qmd-team-intent-kb/git-exporter';
 import type { MemoryCandidate } from '@qmd-team-intent-kb/schema';
 import type { DaemonConfig, DaemonDependencies, CycleResult, DaemonLogger } from './types.js';
 import { runStalenessSweep } from './staleness.js';
+import { writeFeedback } from './feedback.js';
 
 /**
  * Check if enterprise managed settings disable memory capture.
@@ -101,6 +102,16 @@ export async function runCycle(
       logger.info(
         `Curation: ${result.curation.promoted} promoted, ${result.curation.rejected} rejected, ${result.curation.duplicates} duplicates`,
       );
+
+      // Write rejection feedback for MCP status visibility
+      if (result.curation.rejected > 0 || result.curation.flagged > 0) {
+        try {
+          writeFeedback(result.curation, nowFn);
+        } catch (feedbackErr) {
+          const msg = feedbackErr instanceof Error ? feedbackErr.message : String(feedbackErr);
+          logger.warn(`Feedback write failed: ${msg}`);
+        }
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       logger.error(`Curation error: ${msg}`);

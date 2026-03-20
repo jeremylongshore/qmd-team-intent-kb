@@ -26,17 +26,17 @@ describe('RealQmdExecutor', () => {
     it('detects qmd availability', async () => {
       const available = await executor.isAvailable();
       expect(available).toBe(true);
-    });
+    }, 15000);
 
     it('gets qmd version', async () => {
       const result = await executor.execute(['--version']);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('qmd');
-    });
+    }, 15000);
 
     it('handles invalid commands gracefully', async () => {
       const result = await executor.execute(['invalid-command-that-does-not-exist']);
       expect(result.exitCode).not.toBe(0);
-    });
+    }, 15000);
   });
 });

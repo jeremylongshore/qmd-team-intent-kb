@@ -1,5 +1,5 @@
 {
-  "name": "@qmd-team-intent-kb/edge-daemon",
+  "name": "@qmd-team-intent-kb/mcp-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,6 +12,9 @@
       "default": "./dist/index.js"
     }
   },
+  "bin": {
+    "teamkb-mcp": "dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
@@ -20,14 +23,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@qmd-team-intent-kb/schema": "workspace:*",
-    "@qmd-team-intent-kb/common": "workspace:*",
-    "@qmd-team-intent-kb/store": "workspace:*",
-    "@qmd-team-intent-kb/policy-engine": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@qmd-team-intent-kb/claude-runtime": "workspace:*",
-    "@qmd-team-intent-kb/curator": "workspace:*",
-    "@qmd-team-intent-kb/git-exporter": "workspace:*",
-    "@qmd-team-intent-kb/qmd-adapter": "workspace:*"
+    "@qmd-team-intent-kb/common": "workspace:*",
+    "@qmd-team-intent-kb/edge-daemon": "workspace:*",
+    "@qmd-team-intent-kb/schema": "workspace:*",
+    "@qmd-team-intent-kb/store": "workspace:*",
+    "fast-glob": "^3.3.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0"
