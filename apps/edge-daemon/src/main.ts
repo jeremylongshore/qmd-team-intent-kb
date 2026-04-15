@@ -9,7 +9,7 @@ import {
 import { resolveTeamKbPath } from '@qmd-team-intent-kb/common';
 import { QmdAdapter } from '@qmd-team-intent-kb/qmd-adapter';
 import { loadDaemonConfig } from './config.js';
-import { ConsoleDaemonLogger } from './health.js';
+import { PinoDaemonLogger } from './pino-logger.js';
 import { dispatch } from './cli.js';
 
 /**
@@ -20,16 +20,18 @@ import { dispatch } from './cli.js';
  * Default subcommand is `start` when none is provided.
  */
 async function main(): Promise<void> {
-  const logger = new ConsoleDaemonLogger();
+  const rootLogger = new PinoDaemonLogger();
 
   let config;
   try {
     config = loadDaemonConfig();
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    logger.error(`Configuration error: ${msg}`);
+    rootLogger.error(`Configuration error: ${msg}`);
     process.exit(1);
   }
+
+  const logger = rootLogger.child({ tenantId: config.tenantId });
 
   const dbPath = resolveTeamKbPath('teamkb.db');
   const db = createDatabase({ path: dbPath });
