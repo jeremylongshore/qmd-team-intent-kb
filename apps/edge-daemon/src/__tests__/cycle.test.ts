@@ -368,4 +368,100 @@ describe('runCycle', () => {
     // Export should have run regardless of curation outcome
     expect(result.export).not.toBeNull();
   });
+
+  it('index update retries transient qmd errors and succeeds on final attempt', async () => {
+    const sleepCalls: number[] = [];
+    let ensureAttempts = 0;
+
+    const flakeyAdapter = {
+      ensureCollections: async () => {
+        ensureAttempts++;
+        if (ensureAttempts < 3) {
+          return { ok: false as const, error: { message: 'qmd unreachable' } };
+        }
+        return { ok: true as const, value: ['curated'] };
+      },
+      update: async () => ({ ok: true as const, value: undefined }),
+    };
+
+    const retryConfig = makeConfig({
+      spoolDir,
+      enableExport: false,
+      enableIndexUpdate: true,
+      maxRetries: 3,
+      retryBaseDelayMs: 10,
+      retryMaxJitterMs: 0,
+      sleepFn: async (ms: number) => {
+        sleepCalls.push(ms);
+      },
+    });
+
+    const retryDeps = { ...deps, qmdAdapter: flakeyAdapter as never };
+    const result = await runCycle(retryConfig, retryDeps, logger);
+
+    expect(result.indexUpdate).not.toBeNull();
+    expect(result.indexUpdate!.ok).toBe(true);
+    expect(ensureAttempts).toBe(3);
+    expect(sleepCalls).toHaveLength(2);
+  });
+
+  it('index update exhausts retries and records permanent failure', async () => {
+    const sleepFn = async (_ms: number) => {};
+    let attempts = 0;
+
+    const alwaysFailAdapter = {
+      ensureCollections: async () => {
+        attempts++;
+        return { ok: false as const, error: { message: 'qmd unreachable' } };
+      },
+      update: async () => ({ ok: true as const, value: undefined }),
+    };
+
+    const retryConfig = makeConfig({
+      spoolDir,
+      enableExport: false,
+      enableIndexUpdate: true,
+      maxRetries: 2,
+      retryBaseDelayMs: 1,
+      retryMaxJitterMs: 0,
+      sleepFn,
+    });
+
+    const retryDeps = { ...deps, qmdAdapter: alwaysFailAdapter as never };
+    const result = await runCycle(retryConfig, retryDeps, logger);
+
+    expect(result.indexUpdate).not.toBeNull();
+    expect(result.indexUpdate!.ok).toBe(false);
+    expect(result.indexUpdate!.error).toContain('qmd unreachable');
+    expect(attempts).toBe(3); // 1 initial + 2 retries
+  });
+
+  it('index update does not retry permanent (non-transient) errors', async () => {
+    let attempts = 0;
+
+    const permanentFailAdapter = {
+      ensureCollections: async () => {
+        attempts++;
+        return { ok: false as const, error: { message: 'TypeError: cannot read properties' } };
+      },
+      update: async () => ({ ok: true as const, value: undefined }),
+    };
+
+    const retryConfig = makeConfig({
+      spoolDir,
+      enableExport: false,
+      enableIndexUpdate: true,
+      maxRetries: 3,
+      retryBaseDelayMs: 10,
+      retryMaxJitterMs: 0,
+      sleepFn: async (_ms: number) => {},
+    });
+
+    const retryDeps = { ...deps, qmdAdapter: permanentFailAdapter as never };
+    const result = await runCycle(retryConfig, retryDeps, logger);
+
+    expect(result.indexUpdate!.ok).toBe(false);
+    expect(result.indexUpdate!.error).toContain('TypeError');
+    expect(attempts).toBe(1); // no retry for permanent errors
+  });
 });

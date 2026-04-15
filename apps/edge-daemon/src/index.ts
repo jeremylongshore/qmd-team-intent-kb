@@ -12,6 +12,7 @@ export type {
 export { loadDaemonConfig } from './config.js';
 export { acquireLock, releaseLock, isLocked } from './lock.js';
 export { ConsoleDaemonLogger, NullLogger } from './health.js';
+export { PinoDaemonLogger } from './pino-logger.js';
 export { runCycle } from './cycle.js';
 export { runStalenessSweep } from './staleness.js';
 export { EdgeDaemon } from './daemon.js';

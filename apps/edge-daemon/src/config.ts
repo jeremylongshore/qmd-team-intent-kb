@@ -13,6 +13,9 @@ const DEFAULTS = {
   exportOutputDir: 'kb-export/',
   exportTargetId: 'kb-export-default',
   supersessionThreshold: 0.6,
+  maxRetries: 3,
+  retryBaseDelayMs: 500,
+  retryMaxJitterMs: 200,
 } as const;
 
 /**
@@ -33,6 +36,9 @@ const DEFAULTS = {
  *   DAEMON_SUPERSESSION_THRESHOLD — Jaccard threshold (default 0.6)
  *   DAEMON_PID_FILE        — PID file path
  *   DAEMON_HEALTH_PORT     — HTTP health server port (default 0 = disabled)
+ *   DAEMON_MAX_RETRIES     — max retries for transient errors (default 3)
+ *   DAEMON_RETRY_BASE_DELAY — base backoff delay in ms (default 500)
+ *   DAEMON_RETRY_MAX_JITTER — max jitter in ms added to backoff (default 200)
  */
 export function loadDaemonConfig(
   env: Record<string, string | undefined> = process.env,
@@ -69,6 +75,9 @@ export function loadDaemonConfig(
     ),
     pidFilePath: env['DAEMON_PID_FILE'] ?? resolveTeamKbPath('daemon.pid'),
     healthPort: parseNonNegativeInt(env['DAEMON_HEALTH_PORT'], 0),
+    maxRetries: parsePositiveInt(env['DAEMON_MAX_RETRIES'], DEFAULTS.maxRetries),
+    retryBaseDelayMs: parsePositiveInt(env['DAEMON_RETRY_BASE_DELAY'], DEFAULTS.retryBaseDelayMs),
+    retryMaxJitterMs: parsePositiveInt(env['DAEMON_RETRY_MAX_JITTER'], DEFAULTS.retryMaxJitterMs),
   };
 }
 
