@@ -12,7 +12,6 @@
     { "path": "../../packages/schema" },
     { "path": "../../packages/common" },
     { "path": "../../packages/store" },
-    { "path": "../../packages/claude-runtime" },
-    { "path": "../edge-daemon" }
+    { "path": "../../packages/claude-runtime" }
   ]
 }
