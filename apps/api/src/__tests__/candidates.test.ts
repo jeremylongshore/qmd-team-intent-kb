@@ -5,6 +5,7 @@ import type Database from 'better-sqlite3';
 import { createTestDatabase } from '@qmd-team-intent-kb/store';
 import { buildApp } from '../app.js';
 import { makeCandidate, NOW } from './fixtures.js';
+import { injectJson } from './assertions.js';
 
 describe('/api/candidates', () => {
   let db: Database.Database;
@@ -25,54 +26,39 @@ describe('/api/candidates', () => {
 
   it('POST creates a candidate and returns 201', async () => {
     const body = makeCandidate();
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/candidates',
-      payload: body,
-    });
-    expect(res.statusCode).toBe(201);
-    const created = res.json<{ id: string; status: string }>();
+    const res = await injectJson(app, 'POST', '/api/candidates', body);
+    expect(res.status).toBe(201);
+    const created = res.body as { id: string; status: string };
     expect(created.id).toBe(body['id']);
     expect(created.status).toBe('inbox');
   });
 
   it('POST with invalid data returns 400', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/candidates',
-      payload: { title: 'Missing required fields' },
+    const res = await injectJson(app, 'POST', '/api/candidates', {
+      title: 'Missing required fields',
     });
-    expect(res.statusCode).toBe(400);
-    const body = res.json<{ error: string }>();
-    expect(body.error).toMatch(/Invalid candidate/);
+    expect(res.status).toBe(400);
+    expect((res.body as { error: string }).error).toMatch(/Invalid candidate/);
   });
 
   it('POST with missing required fields returns 400', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/candidates',
-      payload: { id: randomUUID(), status: 'inbox' },
+    const res = await injectJson(app, 'POST', '/api/candidates', {
+      id: randomUUID(),
+      status: 'inbox',
     });
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   it('POST computes and stores a content hash', async () => {
     const content = 'Unique content for hash test';
     const body = makeCandidate({ content });
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/candidates',
-      payload: body,
-    });
-    expect(res.statusCode).toBe(201);
+    const res = await injectJson(app, 'POST', '/api/candidates', body);
+    expect(res.status).toBe(201);
     // Verify the candidate is retrievable (hash stored internally)
-    const candidate = res.json<{ id: string }>();
-    const getRes = await app.inject({
-      method: 'GET',
-      url: `/api/candidates/${candidate.id}`,
-    });
-    expect(getRes.statusCode).toBe(200);
-    expect(getRes.json<{ content: string }>().content).toBe(content);
+    const candidate = res.body as { id: string };
+    const getRes = await injectJson(app, 'GET', `/api/candidates/${candidate.id}`);
+    expect(getRes.status).toBe(200);
+    expect((getRes.body as { content: string }).content).toBe(content);
   });
 
   it('POST accepts duplicate candidates with different IDs', async () => {
@@ -80,11 +66,11 @@ describe('/api/candidates', () => {
     const first = makeCandidate({ content });
     const second = makeCandidate({ content, id: randomUUID() });
 
-    const r1 = await app.inject({ method: 'POST', url: '/api/candidates', payload: first });
-    const r2 = await app.inject({ method: 'POST', url: '/api/candidates', payload: second });
+    const r1 = await injectJson(app, 'POST', '/api/candidates', first);
+    const r2 = await injectJson(app, 'POST', '/api/candidates', second);
 
-    expect(r1.statusCode).toBe(201);
-    expect(r2.statusCode).toBe(201);
+    expect(r1.status).toBe(201);
+    expect(r2.status).toBe(201);
   });
 
   it('POST with full metadata fields succeeds', async () => {
@@ -102,9 +88,9 @@ describe('/api/candidates', () => {
         duplicateSuspect: true,
       },
     });
-    const res = await app.inject({ method: 'POST', url: '/api/candidates', payload: body });
-    expect(res.statusCode).toBe(201);
-    const created = res.json<{ metadata: { filePaths: string[] } }>();
+    const res = await injectJson(app, 'POST', '/api/candidates', body);
+    expect(res.status).toBe(201);
+    const created = res.body as { metadata: { filePaths: string[] } };
     expect(created.metadata.filePaths).toEqual(['src/api.ts', 'src/auth.ts']);
   });
 
@@ -114,21 +100,15 @@ describe('/api/candidates', () => {
     const body = makeCandidate();
     await app.inject({ method: 'POST', url: '/api/candidates', payload: body });
 
-    const res = await app.inject({
-      method: 'GET',
-      url: `/api/candidates/${body['id'] as string}`,
-    });
-    expect(res.statusCode).toBe(200);
-    expect(res.json<{ id: string }>().id).toBe(body['id']);
+    const res = await injectJson(app, 'GET', `/api/candidates/${body['id'] as string}`);
+    expect(res.status).toBe(200);
+    expect((res.body as { id: string }).id).toBe(body['id']);
   });
 
   it('GET /:id for non-existent returns 404', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: `/api/candidates/${randomUUID()}`,
-    });
-    expect(res.statusCode).toBe(404);
-    expect(res.json<{ error: string }>().error).toMatch(/not found/i);
+    const res = await injectJson(app, 'GET', `/api/candidates/${randomUUID()}`);
+    expect(res.status).toBe(404);
+    expect((res.body as { error: string }).error).toMatch(/not found/i);
   });
 
   // ---- GET /api/candidates -------------------------------------------------
@@ -139,26 +119,23 @@ describe('/api/candidates', () => {
     await app.inject({ method: 'POST', url: '/api/candidates', payload: alpha });
     await app.inject({ method: 'POST', url: '/api/candidates', payload: beta });
 
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/candidates?tenantId=team-alpha',
-    });
-    expect(res.statusCode).toBe(200);
-    const list = res.json<Array<{ tenantId: string }>>();
+    const res = await injectJson(app, 'GET', '/api/candidates?tenantId=team-alpha');
+    expect(res.status).toBe(200);
+    const list = res.body as Array<{ tenantId: string }>;
     expect(list.every((c) => c.tenantId === 'team-alpha')).toBe(true);
     expect(list.length).toBeGreaterThanOrEqual(1);
   });
 
   it('GET list without tenantId returns 400', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/candidates' });
-    expect(res.statusCode).toBe(400);
-    expect(res.json<{ error: string }>().error).toMatch(/tenantId/);
+    const res = await injectJson(app, 'GET', '/api/candidates');
+    expect(res.status).toBe(400);
+    expect((res.body as { error: string }).error).toMatch(/tenantId/);
   });
 
   it('POST preserves capturedAt timestamp exactly', async () => {
     const body = makeCandidate({ capturedAt: NOW });
-    const res = await app.inject({ method: 'POST', url: '/api/candidates', payload: body });
-    expect(res.statusCode).toBe(201);
-    expect(res.json<{ capturedAt: string }>().capturedAt).toBe(NOW);
+    const res = await injectJson(app, 'POST', '/api/candidates', body);
+    expect(res.status).toBe(201);
+    expect((res.body as { capturedAt: string }).capturedAt).toBe(NOW);
   });
 });
