@@ -87,28 +87,24 @@ describe('GovernancePolicy', () => {
   });
 
   it('defaults enabled to true', () => {
-    const input = makeGovernancePolicy();
-    delete (input as Record<string, unknown>)['enabled'];
+    const { enabled: _removed, ...input } = makeGovernancePolicy();
     const result = GovernancePolicy.parse(input);
     expect(result.enabled).toBe(true);
   });
 
   it('defaults version to 1', () => {
-    const input = makeGovernancePolicy();
-    delete (input as Record<string, unknown>)['version'];
+    const { version: _removed, ...input } = makeGovernancePolicy();
     const result = GovernancePolicy.parse(input);
     expect(result.version).toBe(1);
   });
 
   it('rejects missing name', () => {
-    const input = makeGovernancePolicy();
-    delete (input as Record<string, unknown>)['name'];
+    const { name: _removed, ...input } = makeGovernancePolicy();
     expect(() => GovernancePolicy.parse(input)).toThrow();
   });
 
   it('rejects missing tenantId', () => {
-    const input = makeGovernancePolicy();
-    delete (input as Record<string, unknown>)['tenantId'];
+    const { tenantId: _removed, ...input } = makeGovernancePolicy();
     expect(() => GovernancePolicy.parse(input)).toThrow();
   });
 

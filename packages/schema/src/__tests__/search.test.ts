@@ -140,8 +140,7 @@ describe('SearchResult', () => {
   });
 
   it('rejects missing query', () => {
-    const input = makeSearchResult();
-    delete (input as Record<string, unknown>)['query'];
+    const { query: _removed, ...input } = makeSearchResult();
     expect(() => SearchResult.parse(input)).toThrow();
   });
 });
