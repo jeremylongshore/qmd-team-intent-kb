@@ -36,8 +36,16 @@ export interface DaemonConfig {
   supersessionThreshold: number;
   /** PID file path for locking. Default ~/.teamkb/daemon.pid. */
   pidFilePath: string;
+  /** Maximum retry attempts for transient step errors. Default 3. */
+  maxRetries: number;
+  /** Base delay in ms for exponential backoff. Default 500. */
+  retryBaseDelayMs: number;
+  /** Maximum random jitter added to backoff delay in ms. Default 200. */
+  retryMaxJitterMs: number;
   /** Injectable clock for deterministic tests. */
   nowFn?: () => string;
+  /** Injectable sleep for deterministic retry tests. */
+  sleepFn?: (ms: number) => Promise<void>;
 }
 
 /** Repository dependencies injected into the daemon */
