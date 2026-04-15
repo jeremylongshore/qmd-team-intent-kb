@@ -26,7 +26,6 @@ export { classifyContent } from './secrets/content-classifier.js';
 export type { SensitivityLevel, ContentClassification } from './secrets/content-classifier.js';
 
 // Capture
-export { resolveGitContext, deriveTenantId } from './capture/git-context.js';
 export { buildCandidate } from './capture/candidate-builder.js';
 export type { CandidateBuildResult } from './capture/candidate-builder.js';
 export { DefaultContextProvider } from './capture/context-provider.js';
