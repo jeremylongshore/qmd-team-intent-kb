@@ -61,3 +61,96 @@ jobs:
               fi
             fi
           done
+
+  # --------------------------------------------------------------------------
+  # Supply-chain signing + SLSA provenance for the edge-daemon container.
+  #
+  # This job only runs on tag pushes (refs/tags/v*), never on workflow_dispatch
+  # dry-runs.  It is additive — the validate job above remains unchanged and
+  # always runs.
+  #
+  # Outputs:
+  #   - ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon:${TAG}
+  #   - cosign keyless signature (OIDC, Rekor transparency log)
+  #   - SLSA Level 3 build provenance attestation
+  #
+  # Verification (after release):
+  #   cosign verify \
+  #     --certificate-identity-regexp 'https://github\.com/jeremylongshore/qmd-team-intent-kb/\.github/workflows/release\.yml@refs/tags/v.*' \
+  #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  #     ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon:<tag>
+  # --------------------------------------------------------------------------
+  build-and-push-image:
+    name: Build and push edge-daemon image
+    needs: validate
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      image: ${{ steps.image-ref.outputs.image }}
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Resolve image reference
+        id: image-ref
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          IMAGE="ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/edge-daemon/deploy/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.image-ref.outputs.image }}:${{ steps.image-ref.outputs.tag }}
+            ${{ steps.image-ref.outputs.image }}:latest
+          provenance: true
+          sbom: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image (keyless, OIDC)
+        env:
+          IMAGE: ${{ steps.image-ref.outputs.image }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+
+  # SLSA Level 3 build provenance — called as a reusable workflow.
+  # Generator: https://github.com/slsa-framework/slsa-github-generator
+  provenance:
+    needs: build-and-push-image
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      actions: read
+      id-token: write
+      packages: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
+    with:
+      image: ${{ needs.build-and-push-image.outputs.image }}
+      digest: ${{ needs.build-and-push-image.outputs.digest }}
+      registry-username: ${{ github.actor }}
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
