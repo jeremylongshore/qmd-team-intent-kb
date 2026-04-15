@@ -7,7 +7,7 @@ import type {
   AuditEvent,
 } from '@qmd-team-intent-kb/schema';
 
-const NOW = '2026-01-15T10:00:00.000Z';
+export const NOW = '2026-01-15T10:00:00.000Z';
 export const HASH_A = 'a'.repeat(64);
 export const HASH_B = 'b'.repeat(64);
 
