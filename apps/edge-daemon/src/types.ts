@@ -36,6 +36,8 @@ export interface DaemonConfig {
   supersessionThreshold: number;
   /** PID file path for locking. Default ~/.teamkb/daemon.pid. */
   pidFilePath: string;
+  /** HTTP health server port. 0 = disabled. Default 0. */
+  healthPort?: number;
   /** Injectable clock for deterministic tests. */
   nowFn?: () => string;
 }

@@ -7,6 +7,7 @@ import type {
 } from './types.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { runCycle } from './cycle.js';
+import { HealthServer } from './health-server.js';
 
 /**
  * Edge Daemon — polls the spool directory, runs curation, and syncs the index.
@@ -24,6 +25,7 @@ export class EdgeDaemon {
   private _cycleInFlight = false;
   private _stopResolve: (() => void) | null = null;
   private readonly _signalHandlers: Array<{ signal: NodeJS.Signals; handler: () => void }> = [];
+  private _healthServer: HealthServer | null = null;
 
   constructor(
     private readonly config: DaemonConfig,
@@ -44,7 +46,7 @@ export class EdgeDaemon {
    *
    * @throws Error if the lock cannot be acquired (another instance running).
    */
-  start(): void {
+  async start(): Promise<void> {
     if (this._state !== 'idle') {
       throw new Error(`Cannot start daemon in state '${this._state}'`);
     }
@@ -57,6 +59,17 @@ export class EdgeDaemon {
     }
 
     this._state = 'running';
+
+    if ((this.config.healthPort ?? 0) > 0) {
+      this._healthServer = new HealthServer({
+        port: this.config.healthPort!,
+        getState: () => this._state,
+        getLastCycleResult: () => this._lastCycleResult,
+      });
+      await this._healthServer.start();
+      this.logger.info(`Health server listening on port ${this._healthServer.port}`);
+    }
+
     this.registerSignalHandlers();
     this.logger.info(
       `Daemon started (tenant=${this.config.tenantId}, poll=${this.config.pollIntervalMs}ms)`,
@@ -92,6 +105,12 @@ export class EdgeDaemon {
     }
 
     this.removeSignalHandlers();
+
+    if (this._healthServer !== null) {
+      await this._healthServer.stop();
+      this._healthServer = null;
+    }
+
     releaseLock(this.config.pidFilePath);
     this._state = 'stopped';
     this.logger.info('Daemon stopped');
