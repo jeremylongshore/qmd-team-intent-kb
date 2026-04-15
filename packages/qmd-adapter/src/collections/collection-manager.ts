@@ -76,7 +76,7 @@ export class CollectionManager {
       if (!existing.some((e) => e.includes(name))) {
         const path = `${basePath}/${name}`;
         const addResult = await this.addCollection(name, path);
-        if (!addResult.ok) return addResult as Result<string[], QmdError>;
+        if (!addResult.ok) return { ok: false, error: addResult.error };
         created.push(name);
       }
     }
