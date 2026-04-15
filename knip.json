@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreBinaries": ["dev"],
+  "rules": {
+    "duplicates": "off"
+  },
+  "workspaces": {
+    "apps/api": {
+      "ignoreBinaries": ["tsx"]
+    },
+    "apps/curator": {
+      "ignoreBinaries": ["tsx"]
+    },
+    "apps/edge-daemon": {
+      "ignoreBinaries": ["tsx"],
+      "ignoreDependencies": ["pino-pretty"]
+    },
+    "apps/git-exporter": {
+      "ignoreBinaries": ["tsx"]
+    },
+    "apps/mcp-server": {
+      "ignoreBinaries": ["tsx"]
+    },
+    "apps/reporting": {
+      "ignoreBinaries": ["tsx"]
+    }
+  }
+}
