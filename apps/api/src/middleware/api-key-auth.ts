@@ -47,6 +47,15 @@ export function registerApiKeyAuth(app: FastifyInstance, apiKey: string | undefi
       return;
     }
 
+    // OpenAPI spec and docs UI are always public.
+    if (
+      request.url === '/openapi.json' ||
+      request.url === '/docs' ||
+      request.url.startsWith('/docs/')
+    ) {
+      return;
+    }
+
     const authHeader = request.headers['authorization'];
 
     if (authHeader === undefined) {

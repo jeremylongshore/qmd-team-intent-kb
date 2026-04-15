@@ -21,6 +21,7 @@ import { registerSearchRoutes } from './routes/search.js';
 import { registerRateLimiter } from './middleware/rate-limiter.js';
 import { registerApiKeyAuth } from './middleware/api-key-auth.js';
 import { registerInputSanitizer } from './middleware/input-sanitizer.js';
+import { registerOpenApi } from './openapi.js';
 
 /** External dependencies injected into the application factory. */
 export interface AppDependencies {
@@ -53,6 +54,10 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   registerApiKeyAuth(app, deps.apiKey);
   registerInputSanitizer(app, deps.maxBodySize ?? 1_048_576);
 
+  // OpenAPI must be registered BEFORE routes so their schema metadata
+  // is collected into the generated document.
+  registerOpenApi(app);
+
   const candidateRepo = new CandidateRepository(deps.db);
   const memoryRepo = new MemoryRepository(deps.db);
   const policyRepo = new PolicyRepository(deps.db);
@@ -64,12 +69,18 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   const healthService = new HealthService(deps.db);
   const searchService = new SearchService(memoryRepo);
 
-  registerHealthRoutes(app, healthService);
-  registerCandidateRoutes(app, candidateService);
-  registerMemoryRoutes(app, memoryService);
-  registerPolicyRoutes(app, policyService);
-  registerAuditRoutes(app, auditRepo);
-  registerSearchRoutes(app, searchService);
+  // Routes are wrapped in an inner register() so they load AFTER the
+  // @fastify/swagger plugin. The swagger plugin installs an `onRoute`
+  // hook during its async load; routes added synchronously before the
+  // hook is active would be missing from the generated spec.
+  void app.register(async (scope) => {
+    registerHealthRoutes(scope, healthService);
+    registerCandidateRoutes(scope, candidateService);
+    registerMemoryRoutes(scope, memoryService);
+    registerPolicyRoutes(scope, policyService);
+    registerAuditRoutes(scope, auditRepo);
+    registerSearchRoutes(scope, searchService);
+  });
 
   return app;
 }

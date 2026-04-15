@@ -12,25 +12,36 @@ import type { AuditRepository } from '@qmd-team-intent-kb/store';
  * is returned — a tenant scope is recommended for production use.
  */
 export function registerAuditRoutes(app: FastifyInstance, repo: AuditRepository): void {
-  app.get('/api/audit', async (request, reply) => {
-    const { tenantId, memoryId, action } = request.query as {
-      tenantId?: string;
-      memoryId?: string;
-      action?: string;
-    };
+  app.get(
+    '/api/audit',
+    {
+      schema: {
+        tags: ['audit'],
+        summary: 'Query the immutable audit event log',
+        description:
+          'Filter precedence: `memoryId` > `action` > `tenantId`. Returns `[]` if no filter is provided.',
+      },
+    },
+    async (request, reply) => {
+      const { tenantId, memoryId, action } = request.query as {
+        tenantId?: string;
+        memoryId?: string;
+        action?: string;
+      };
 
-    if (memoryId !== undefined && memoryId.length > 0) {
-      return reply.send(repo.findByMemory(memoryId));
-    }
+      if (memoryId !== undefined && memoryId.length > 0) {
+        return reply.send(repo.findByMemory(memoryId));
+      }
 
-    if (action !== undefined && action.length > 0) {
-      return reply.send(repo.findByAction(action));
-    }
+      if (action !== undefined && action.length > 0) {
+        return reply.send(repo.findByAction(action));
+      }
 
-    if (tenantId !== undefined && tenantId.length > 0) {
-      return reply.send(repo.findByTenant(tenantId));
-    }
+      if (tenantId !== undefined && tenantId.length > 0) {
+        return reply.send(repo.findByTenant(tenantId));
+      }
 
-    return reply.send([]);
-  });
+      return reply.send([]);
+    },
+  );
 }
