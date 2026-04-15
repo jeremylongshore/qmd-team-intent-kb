@@ -1,8 +1,9 @@
 import { classifyContent } from '@qmd-team-intent-kb/claude-runtime';
-import type { SensitivityLevel } from '@qmd-team-intent-kb/claude-runtime';
 import { Sensitivity } from '@qmd-team-intent-kb/schema';
 import type { MemoryCandidate, PolicyRule } from '@qmd-team-intent-kb/schema';
 import type { EvaluationContext, RuleResult } from '../types.js';
+
+type SensitivityLevel = Sensitivity;
 
 const VALID_LEVELS = new Set<string>(Sensitivity.options);
 
