@@ -9,6 +9,7 @@ import type { DaemonConfig, DaemonDependencies, CycleResult, DaemonLogger } from
 import { runStalenessSweep } from './staleness.js';
 import { writeFeedback } from './feedback.js';
 import { filterByRepoScope } from './repo-scope.js';
+import { withRetry } from './retry.js';
 
 /**
  * Check if enterprise managed settings disable memory capture.
@@ -180,18 +181,27 @@ export async function runCycle(
     }
   }
 
-  // Step 3: Git export
+  // Step 3: Git export — retried on transient push conflicts
   if (config.enableExport) {
     try {
-      result.export = runExport(
-        deps.memoryRepo,
-        deps.exportStateRepo,
+      result.export = await withRetry(
+        async () =>
+          runExport(
+            deps.memoryRepo,
+            deps.exportStateRepo,
+            {
+              outputDir: config.exportOutputDir,
+              targetId: config.exportTargetId,
+              tenantId: config.tenantId,
+            },
+            nowFn,
+          ),
         {
-          outputDir: config.exportOutputDir,
-          targetId: config.exportTargetId,
-          tenantId: config.tenantId,
+          maxRetries: config.maxRetries,
+          baseDelayMs: config.retryBaseDelayMs,
+          maxJitterMs: config.retryMaxJitterMs,
+          sleepFn: config.sleepFn,
         },
-        nowFn,
       );
       logger.info(
         `Export: ${result.export.written.length} written, ${result.export.archived.length} archived`,
@@ -202,23 +212,28 @@ export async function runCycle(
     }
   }
 
-  // Step 4: qmd index update — offline resilient
+  // Step 4: qmd index update — offline resilient, retried on transient qmd errors
   if (config.enableIndexUpdate && deps.qmdAdapter) {
+    const retryOpts = {
+      maxRetries: config.maxRetries,
+      baseDelayMs: config.retryBaseDelayMs,
+      maxJitterMs: config.retryMaxJitterMs,
+      sleepFn: config.sleepFn,
+    };
     try {
-      const ensureResult = await deps.qmdAdapter.ensureCollections();
-      if (!ensureResult.ok) {
-        result.indexUpdate = { ok: false, error: ensureResult.error.message };
-        logger.warn(`Index ensureCollections failed: ${ensureResult.error.message}`);
-      } else {
-        const updateResult = await deps.qmdAdapter.update();
-        if (updateResult.ok) {
-          result.indexUpdate = { ok: true };
-          logger.info('Index update complete');
-        } else {
-          result.indexUpdate = { ok: false, error: updateResult.error.message };
-          logger.warn(`Index update failed: ${updateResult.error.message}`);
+      await withRetry(async () => {
+        const ensureResult = await deps.qmdAdapter!.ensureCollections();
+        if (!ensureResult.ok) {
+          const e = new Error(ensureResult.error.message);
+          throw e;
         }
-      }
+        const updateResult = await deps.qmdAdapter!.update();
+        if (!updateResult.ok) {
+          throw new Error(updateResult.error.message);
+        }
+      }, retryOpts);
+      result.indexUpdate = { ok: true };
+      logger.info('Index update complete');
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       result.indexUpdate = { ok: false, error: msg };

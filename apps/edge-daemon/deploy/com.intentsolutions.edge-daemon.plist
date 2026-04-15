@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd plist for the qmd-team-intent-kb edge daemon.
+
+  Install (per-user agent):
+    cp com.intentsolutions.edge-daemon.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.intentsolutions.edge-daemon.plist
+
+  Uninstall:
+    launchctl unload ~/Library/LaunchAgents/com.intentsolutions.edge-daemon.plist
+    rm ~/Library/LaunchAgents/com.intentsolutions.edge-daemon.plist
+
+  Edit EnvironmentVariables before loading.  DAEMON_TENANT_ID is required.
+  See 000-docs/027-OD-OPSM-edge-daemon-runbook.md for the full variable list.
+
+  APP_DIR defaults to /opt/qmd-team-intent-kb — adjust to match the actual
+  installation path on this machine.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.intentsolutions.edge-daemon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/node</string>
+        <string>/opt/qmd-team-intent-kb/apps/edge-daemon/dist/main.js</string>
+        <string>start</string>
+    </array>
+
+    <!-- Required: set at minimum DAEMON_TENANT_ID. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>DAEMON_TENANT_ID</key>
+        <string>my-team</string>
+        <key>DAEMON_POLL_INTERVAL</key>
+        <string>10000</string>
+        <key>DAEMON_ENABLE_EXPORT</key>
+        <string>true</string>
+        <key>DAEMON_ENABLE_INDEX</key>
+        <string>true</string>
+        <key>DAEMON_ENABLE_STALENESS</key>
+        <string>true</string>
+    </dict>
+
+    <!-- Start automatically on login. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Restart on crash (exit code != 0 or signal). -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+
+    <!-- Throttle rapid restart loops to avoid spinning on a hard failure. -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>StandardOutPath</key>
+    <string>/usr/local/var/log/edge-daemon/stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/usr/local/var/log/edge-daemon/stderr.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>/opt/qmd-team-intent-kb</string>
+</dict>
+</plist>
