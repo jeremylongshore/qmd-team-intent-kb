@@ -190,12 +190,11 @@ export class EdgeDaemon {
 
     this._cycleInFlight = true;
     try {
-      // Spread the stashed repoContext into deps so runCycle uses the pre-resolved value
-      // rather than spawning a fresh git subprocess on every cycle.
-      const depsWithContext =
-        this._repoContext !== undefined
-          ? { ...this.deps, repoContext: this._repoContext }
-          : this.deps;
+      // Pass the stashed repoContext into deps so runCycle uses the pre-resolved
+      // value rather than spawning a fresh git subprocess on every cycle. When
+      // _repoContext is still undefined (scopeByRepo disabled, bootstrap skipped),
+      // runCycle falls back to its own per-call resolution.
+      const depsWithContext = { ...this.deps, repoContext: this._repoContext };
       this._lastCycleResult = await runCycle(this.config, depsWithContext, this.logger);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
