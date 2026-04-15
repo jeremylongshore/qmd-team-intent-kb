@@ -92,4 +92,43 @@ describe('loadDaemonConfig', () => {
     expect(config.enableStalenessSweep).toBe(true);
     expect(config.staleDays).toBe(90);
   });
+
+  describe('DAEMON_HEALTH_HOST', () => {
+    it('defaults to 127.0.0.1 when unset', () => {
+      const config = loadDaemonConfig({ DAEMON_TENANT_ID: 'team' });
+      expect(config.healthHost).toBe('127.0.0.1');
+    });
+
+    it('accepts a custom host value', () => {
+      const config = loadDaemonConfig({
+        DAEMON_TENANT_ID: 'team',
+        DAEMON_HEALTH_HOST: '0.0.0.0',
+      });
+      expect(config.healthHost).toBe('0.0.0.0');
+    });
+
+    it('trims whitespace from the host value', () => {
+      const config = loadDaemonConfig({
+        DAEMON_TENANT_ID: 'team',
+        DAEMON_HEALTH_HOST: '  0.0.0.0  ',
+      });
+      expect(config.healthHost).toBe('0.0.0.0');
+    });
+
+    it('falls back to 127.0.0.1 when value is an empty string', () => {
+      const config = loadDaemonConfig({
+        DAEMON_TENANT_ID: 'team',
+        DAEMON_HEALTH_HOST: '',
+      });
+      expect(config.healthHost).toBe('127.0.0.1');
+    });
+
+    it('falls back to 127.0.0.1 when value is whitespace-only', () => {
+      const config = loadDaemonConfig({
+        DAEMON_TENANT_ID: 'team',
+        DAEMON_HEALTH_HOST: '   ',
+      });
+      expect(config.healthHost).toBe('127.0.0.1');
+    });
+  });
 });
