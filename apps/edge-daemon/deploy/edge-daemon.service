@@ -28,6 +28,16 @@ EnvironmentFile=/etc/edge-daemon/env
 # Point at the compiled entry-point. Adjust APP_DIR if the deployment path
 # differs (e.g. /opt/qmd-team-intent-kb).
 Environment=APP_DIR=/opt/qmd-team-intent-kb
+
+# Override spool + PID paths so they resolve under /var/lib/edge-daemon.
+# ProtectHome=true (below) blocks the daemon from writing to the user's home,
+# which is the default for DAEMON_SPOOL_DIR, DAEMON_EXPORT_DIR, and DAEMON_PID_FILE. Setting them
+# here ensures the unit works out-of-the-box without requiring the operator
+# to know about this interaction.
+Environment=DAEMON_SPOOL_DIR=/var/lib/edge-daemon/spool
+Environment=DAEMON_EXPORT_DIR=/var/lib/edge-daemon/kb-export
+Environment=DAEMON_PID_FILE=/var/lib/edge-daemon/daemon.pid
+
 ExecStart=/usr/bin/node ${APP_DIR}/apps/edge-daemon/dist/main.js start
 
 # Restart on non-zero exit or signal, but not on clean exit (code 0).

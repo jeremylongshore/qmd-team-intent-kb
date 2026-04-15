@@ -56,6 +56,37 @@ function rowToMemory(row: MemoryRow): CuratedMemory {
 }
 
 /**
+ * Append optional tenantId and category IN-list filters to a WHERE conditions array.
+ * Mutates `conditions` and `params` in place — no allocation on the caller's behalf.
+ *
+ * @param conditions - Accumulator of SQL WHERE clauses
+ * @param params     - Named-parameter map for the prepared statement
+ * @param tenantId   - Optional tenant filter value
+ * @param categories - Optional category allow-list
+ * @param prefix     - Column name prefix, e.g. `'cm.'` for aliased queries or `''` for bare
+ */
+function appendOptionalFilters(
+  conditions: string[],
+  params: Record<string, string>,
+  tenantId: string | undefined,
+  categories: string[] | undefined,
+  prefix: string,
+): void {
+  if (tenantId !== undefined) {
+    conditions.push(`${prefix}tenant_id = @tenantId`);
+    params['tenantId'] = tenantId;
+  }
+
+  if (categories !== undefined && categories.length > 0) {
+    const placeholders = categories.map((_, i) => `@cat${i}`);
+    conditions.push(`${prefix}category IN (${placeholders.join(', ')})`);
+    categories.forEach((cat, i) => {
+      params[`cat${i}`] = cat;
+    });
+  }
+}
+
+/**
  * Repository for governance-approved curated memories.
  * All methods use prepared statements. Validation is the caller's responsibility.
  */
@@ -347,18 +378,7 @@ export class MemoryRepository {
     const conditions = ["cm.lifecycle = 'active'"];
     const params: Record<string, string> = { query: ftsQuery };
 
-    if (tenantId !== undefined) {
-      conditions.push('cm.tenant_id = @tenantId');
-      params['tenantId'] = tenantId;
-    }
-
-    if (categories !== undefined && categories.length > 0) {
-      const placeholders = categories.map((_, i) => `@cat${i}`);
-      conditions.push(`cm.category IN (${placeholders.join(', ')})`);
-      categories.forEach((cat, i) => {
-        params[`cat${i}`] = cat;
-      });
-    }
+    appendOptionalFilters(conditions, params, tenantId, categories, 'cm.');
 
     const sql = `
       SELECT cm.* FROM curated_memories cm
@@ -381,18 +401,7 @@ export class MemoryRepository {
     ];
     const params: Record<string, string> = { pattern: `%${escapedQuery}%` };
 
-    if (tenantId !== undefined) {
-      conditions.push('tenant_id = @tenantId');
-      params['tenantId'] = tenantId;
-    }
-
-    if (categories !== undefined && categories.length > 0) {
-      const placeholders = categories.map((_, i) => `@cat${i}`);
-      conditions.push(`category IN (${placeholders.join(', ')})`);
-      categories.forEach((cat, i) => {
-        params[`cat${i}`] = cat;
-      });
-    }
+    appendOptionalFilters(conditions, params, tenantId, categories, '');
 
     const sql = `SELECT * FROM curated_memories WHERE ${conditions.join(' AND ')} LIMIT 100`;
     const rows = this.db.prepare(sql).all(params) as MemoryRow[];

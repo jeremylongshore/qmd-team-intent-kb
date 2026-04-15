@@ -64,6 +64,7 @@ export class EdgeDaemon {
     if ((this.config.healthPort ?? 0) > 0) {
       this._healthServer = new HealthServer({
         port: this.config.healthPort!,
+        host: this.config.healthHost,
         getState: () => this._state,
         getLastCycleResult: () => this._lastCycleResult,
       });
