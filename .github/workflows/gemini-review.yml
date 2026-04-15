@@ -24,7 +24,7 @@ concurrency:
 jobs:
   gemini-review:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -50,7 +50,7 @@ jobs:
           settings: |-
             {
               "model": {
-                "maxSessionTurns": 25
+                "maxSessionTurns": 18
               },
               "mcpServers": {
                 "github": {

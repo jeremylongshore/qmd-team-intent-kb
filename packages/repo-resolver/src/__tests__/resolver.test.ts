@@ -22,8 +22,17 @@ describe('resolveRepoContext', () => {
   }
 
   afterEach(() => {
+    // Guard each cleanup — if one throws, later fixtures still get cleaned up.
+    const errors: unknown[] = [];
     while (fixtures.length > 0) {
-      fixtures.pop()?.cleanup();
+      try {
+        fixtures.pop()?.cleanup();
+      } catch (e) {
+        errors.push(e);
+      }
+    }
+    if (errors.length > 0) {
+      throw new AggregateError(errors, `${errors.length} fixture cleanup(s) failed`);
     }
   });
 
