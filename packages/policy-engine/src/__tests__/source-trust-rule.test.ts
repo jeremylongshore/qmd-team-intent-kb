@@ -1,26 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { randomUUID } from 'node:crypto';
-import { MemoryCandidate, GovernancePolicy } from '@qmd-team-intent-kb/schema';
 import { evaluateSourceTrust } from '../rules/source-trust-rule.js';
-import type { EvaluationContext } from '../types.js';
-
-function makeCandidate(overrides?: Record<string, unknown>) {
-  return MemoryCandidate.parse({
-    id: randomUUID(),
-    status: 'inbox',
-    source: 'claude_session',
-    content: 'Use Result<T, E> for all fallible operations in the codebase',
-    title: 'Error handling convention',
-    category: 'convention',
-    trustLevel: 'medium',
-    author: { type: 'ai', id: 'claude-1' },
-    tenantId: 'team-alpha',
-    metadata: { filePaths: [], tags: [] },
-    prePolicyFlags: { potentialSecret: false, lowConfidence: false, duplicateSuspect: false },
-    capturedAt: '2026-01-15T10:00:00.000Z',
-    ...overrides,
-  });
-}
+import { makeCandidate, makeContext } from './fixtures.js';
 
 function makeRule(parameters: Record<string, unknown> = {}, action: 'reject' | 'flag' = 'reject') {
   return {
@@ -30,22 +10,6 @@ function makeRule(parameters: Record<string, unknown> = {}, action: 'reject' | '
     enabled: true,
     priority: 0,
     parameters,
-  };
-}
-
-function makeContext(candidate: MemoryCandidate): EvaluationContext {
-  return {
-    candidate,
-    policy: GovernancePolicy.parse({
-      id: randomUUID(),
-      name: 'Test Policy',
-      tenantId: 'team-alpha',
-      rules: [makeRule()],
-      enabled: true,
-      version: 1,
-      createdAt: '2026-01-15T10:00:00.000Z',
-      updatedAt: '2026-01-15T10:00:00.000Z',
-    }),
   };
 }
 

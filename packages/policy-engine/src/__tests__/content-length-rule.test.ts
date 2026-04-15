@@ -1,25 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { randomUUID } from 'node:crypto';
-import { MemoryCandidate, GovernancePolicy } from '@qmd-team-intent-kb/schema';
 import { evaluateContentLength } from '../rules/content-length-rule.js';
-import type { EvaluationContext } from '../types.js';
-
-function makeCandidate(content: string) {
-  return MemoryCandidate.parse({
-    id: randomUUID(),
-    status: 'inbox',
-    source: 'claude_session',
-    content,
-    title: 'Test candidate',
-    category: 'convention',
-    trustLevel: 'medium',
-    author: { type: 'ai', id: 'claude-1' },
-    tenantId: 'team-alpha',
-    metadata: { filePaths: [], tags: [] },
-    prePolicyFlags: { potentialSecret: false, lowConfidence: false, duplicateSuspect: false },
-    capturedAt: '2026-01-15T10:00:00.000Z',
-  });
-}
+import { makeCandidate, makeContext } from './fixtures.js';
 
 function makeRule(parameters: Record<string, unknown> = {}) {
   return {
@@ -32,26 +13,10 @@ function makeRule(parameters: Record<string, unknown> = {}) {
   };
 }
 
-function makeContext(candidate: MemoryCandidate): EvaluationContext {
-  return {
-    candidate,
-    policy: GovernancePolicy.parse({
-      id: randomUUID(),
-      name: 'Test Policy',
-      tenantId: 'team-alpha',
-      rules: [makeRule()],
-      enabled: true,
-      version: 1,
-      createdAt: '2026-01-15T10:00:00.000Z',
-      updatedAt: '2026-01-15T10:00:00.000Z',
-    }),
-  };
-}
-
 describe('evaluateContentLength', () => {
   it('rejects content below default minimum length', () => {
     // Default min is 10; provide 5 chars
-    const candidate = makeCandidate('short');
+    const candidate = makeCandidate({ content: 'short' });
     const rule = makeRule();
     const result = evaluateContentLength(candidate, rule, makeContext(candidate));
     expect(result.outcome).toBe('fail');
@@ -63,7 +28,7 @@ describe('evaluateContentLength', () => {
   it('rejects content above default maximum length', () => {
     // Default max is 50000; provide 50001 chars
     const content = 'x'.repeat(50001);
-    const candidate = makeCandidate(content);
+    const candidate = makeCandidate({ content });
     const rule = makeRule();
     const result = evaluateContentLength(candidate, rule, makeContext(candidate));
     expect(result.outcome).toBe('fail');
@@ -74,7 +39,7 @@ describe('evaluateContentLength', () => {
 
   it('passes content within default bounds', () => {
     const content = 'Use Result<T, E> for all fallible operations in the codebase';
-    const candidate = makeCandidate(content);
+    const candidate = makeCandidate({ content });
     const rule = makeRule();
     const result = evaluateContentLength(candidate, rule, makeContext(candidate));
     expect(result.outcome).toBe('pass');
@@ -85,7 +50,7 @@ describe('evaluateContentLength', () => {
 
   it('uses default min=10 max=50000 when parameters are empty', () => {
     // Exactly 10 chars — on the boundary, should pass
-    const candidate = makeCandidate('0123456789');
+    const candidate = makeCandidate({ content: '0123456789' });
     const rule = makeRule({});
     const result = evaluateContentLength(candidate, rule, makeContext(candidate));
     expect(result.outcome).toBe('pass');
@@ -94,7 +59,7 @@ describe('evaluateContentLength', () => {
   it('respects custom min parameter', () => {
     // content is 20 chars, custom min is 50 — should fail
     const content = 'exactly twenty chars!';
-    const candidate = makeCandidate(content);
+    const candidate = makeCandidate({ content });
     const rule = makeRule({ min: 50 });
     const result = evaluateContentLength(candidate, rule, makeContext(candidate));
     expect(result.outcome).toBe('fail');
@@ -104,7 +69,7 @@ describe('evaluateContentLength', () => {
   it('respects custom max parameter', () => {
     // content is 100 chars, custom max is 50 — should fail
     const content = 'x'.repeat(100);
-    const candidate = makeCandidate(content);
+    const candidate = makeCandidate({ content });
     const rule = makeRule({ max: 50 });
     const result = evaluateContentLength(candidate, rule, makeContext(candidate));
     expect(result.outcome).toBe('fail');
@@ -114,7 +79,7 @@ describe('evaluateContentLength', () => {
   it('returns normalized score equal to content.length / max on pass', () => {
     // Use custom max=1000 and content of length 500 — score should be 0.5
     const content = 'x'.repeat(500);
-    const candidate = makeCandidate(content);
+    const candidate = makeCandidate({ content });
     const rule = makeRule({ min: 10, max: 1000 });
     const result = evaluateContentLength(candidate, rule, makeContext(candidate));
     expect(result.outcome).toBe('pass');

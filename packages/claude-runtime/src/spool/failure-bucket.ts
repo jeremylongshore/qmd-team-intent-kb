@@ -1,7 +1,7 @@
-import { mkdir, appendFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Result } from '@qmd-team-intent-kb/common';
 import { getFailedPath, getSpoolFilename } from '../config.js';
+import { writeJsonlRecord } from './write-jsonl.js';
 
 /** Record of a failed candidate with reason */
 export interface FailureRecord {
@@ -26,12 +26,5 @@ export async function writeToFailureBucket(
     failedAt: new Date().toISOString(),
   };
 
-  try {
-    await mkdir(dir, { recursive: true });
-    await appendFile(filepath, JSON.stringify(record) + '\n', 'utf8');
-    return { ok: true, value: filepath };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { ok: false, error: `Failed to write to failure bucket: ${msg}` };
-  }
+  return writeJsonlRecord(dir, filepath, record, 'Failed to write to failure bucket');
 }

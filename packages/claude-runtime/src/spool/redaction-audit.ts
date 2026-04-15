@@ -1,8 +1,8 @@
-import { mkdir, appendFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Result } from '@qmd-team-intent-kb/common';
 import type { SecretMatch } from '../types.js';
 import { getRedactionAuditPath, getSpoolFilename } from '../config.js';
+import { writeJsonlRecord } from './write-jsonl.js';
 
 /** An audit record for a secret detection finding */
 export interface RedactionAuditRecord {
@@ -27,12 +27,5 @@ export async function writeRedactionAudit(
     redactedAt: new Date().toISOString(),
   };
 
-  try {
-    await mkdir(dir, { recursive: true });
-    await appendFile(filepath, JSON.stringify(record) + '\n', 'utf8');
-    return { ok: true, value: filepath };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { ok: false, error: `Failed to write redaction audit: ${msg}` };
-  }
+  return writeJsonlRecord(dir, filepath, record, 'Failed to write redaction audit');
 }

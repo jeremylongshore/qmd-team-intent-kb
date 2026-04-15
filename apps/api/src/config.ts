@@ -1,5 +1,4 @@
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { resolveTeamKbPath } from '@qmd-team-intent-kb/common';
 
 /** Runtime configuration for the control plane API */
 export interface AppConfig {
@@ -27,7 +26,7 @@ export function loadConfig(): AppConfig {
   return {
     port: parseInt(process.env['TEAMKB_API_PORT'] ?? '3847', 10),
     host: process.env['TEAMKB_API_HOST'] ?? '127.0.0.1',
-    dbPath: process.env['TEAMKB_DB_PATH'] ?? join(homedir(), '.teamkb', 'data', 'teamkb.db'),
+    dbPath: process.env['TEAMKB_DB_PATH'] ?? resolveTeamKbPath('data/teamkb.db'),
     logLevel: process.env['TEAMKB_LOG_LEVEL'] ?? 'info',
     apiKey: apiKeyRaw !== undefined && apiKeyRaw !== '' ? apiKeyRaw : undefined,
     rateLimitMax: parseInt(process.env['TEAMKB_RATE_LIMIT_MAX'] ?? '100', 10),

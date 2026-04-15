@@ -1,6 +1,6 @@
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
-import { isPathSafe } from '@qmd-team-intent-kb/common';
+import { getTeamKbBasePath, isPathSafe } from '@qmd-team-intent-kb/common';
 
 /** Resolved configuration for the MCP server */
 export interface McpServerConfig {
@@ -31,7 +31,7 @@ export function resolveConfig(): McpServerConfig {
     throw new Error('TEAMKB_TENANT_ID environment variable is required');
   }
 
-  const rawBasePath = process.env['TEAMKB_BASE_PATH'] ?? join(homedir(), '.teamkb');
+  const rawBasePath = getTeamKbBasePath();
   const basePath = resolve(rawBasePath);
 
   // Validate TEAMKB_BASE_PATH against path traversal (must be under home directory)

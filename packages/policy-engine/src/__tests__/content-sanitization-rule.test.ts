@@ -1,26 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { randomUUID } from 'node:crypto';
-import { MemoryCandidate, GovernancePolicy } from '@qmd-team-intent-kb/schema';
 import { evaluateContentSanitization } from '../rules/content-sanitization-rule.js';
-import type { EvaluationContext } from '../types.js';
-
-function makeCandidate(overrides?: Record<string, unknown>): MemoryCandidate {
-  return MemoryCandidate.parse({
-    id: randomUUID(),
-    status: 'inbox',
-    source: 'claude_session',
-    content: 'Use dependency injection for all services',
-    title: 'DI pattern',
-    category: 'pattern',
-    trustLevel: 'medium',
-    author: { type: 'ai', id: 'claude-1' },
-    tenantId: 'team-alpha',
-    metadata: { filePaths: [], tags: [] },
-    prePolicyFlags: { potentialSecret: false, lowConfidence: false, duplicateSuspect: false },
-    capturedAt: '2026-01-15T10:00:00.000Z',
-    ...overrides,
-  });
-}
+import { makeCandidate, makeContext } from './fixtures.js';
 
 function makeRule(overrides?: Record<string, unknown>) {
   return {
@@ -31,22 +11,6 @@ function makeRule(overrides?: Record<string, unknown>) {
     priority: 0,
     parameters: {},
     ...overrides,
-  };
-}
-
-function makeContext(candidate: MemoryCandidate): EvaluationContext {
-  return {
-    candidate,
-    policy: GovernancePolicy.parse({
-      id: randomUUID(),
-      name: 'Test Policy',
-      tenantId: 'team-alpha',
-      rules: [makeRule()],
-      enabled: true,
-      version: 1,
-      createdAt: '2026-01-15T10:00:00.000Z',
-      updatedAt: '2026-01-15T10:00:00.000Z',
-    }),
   };
 }
 
