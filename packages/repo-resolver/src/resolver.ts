@@ -64,7 +64,15 @@ export async function resolveRepoContext(cwd: string): Promise<Result<RepoContex
       cause: `Unexpected git rev-parse output: ${probe.stdout}`,
     });
   }
-  const [rawRepoRoot, isBareStr, commitSha] = lines as [string, string, string];
+  const rawRepoRoot = lines[0];
+  const isBareStr = lines[1];
+  const commitSha = lines[2];
+  if (rawRepoRoot === undefined || isBareStr === undefined || commitSha === undefined) {
+    return err<ResolverError>({
+      kind: 'GitUnavailable',
+      cause: `Unexpected git rev-parse output: ${probe.stdout}`,
+    });
+  }
 
   if (isBareStr.trim() === 'true') {
     return err<ResolverError>({ kind: 'BareRepo', repoRoot: rawRepoRoot });

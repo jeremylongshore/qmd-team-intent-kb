@@ -1,37 +1,41 @@
+import { z } from 'zod';
+
 /**
  * Resolved context for a git working tree.
  *
  * See 000-docs/026-AT-DSGN-repo-resolver-design.md for field semantics.
- * Monorepo fields (`isMonorepo`, `workspaceRoot`, `workspacePackage`) are
- * populated by the monorepo detection pass (mbd.3); the core resolver
- * leaves them at their "not a monorepo" defaults.
+ * Defined as a Zod schema with the TypeScript type derived via `z.infer<>`,
+ * matching the project convention from `packages/schema`.
  */
-export interface RepoContext {
+export const RepoContext = z.object({
   /** Absolute path to the repo working tree root. */
-  repoRoot: string;
+  repoRoot: z.string().min(1),
   /** Lowercased basename of `repoRoot`. */
-  repoName: string;
+  repoName: z.string().min(1),
   /** Origin remote URL, or null when no origin is configured. */
-  remoteUrl: string | null;
+  remoteUrl: z.string().nullable(),
   /** Current branch, or null when HEAD is detached. */
-  branch: string | null;
+  branch: z.string().nullable(),
   /** HEAD commit SHA (40-char hex). */
-  commitSha: string;
+  commitSha: z.string().regex(/^[0-9a-f]{40}$/),
   /** True when a workspace manifest was detected. */
-  isMonorepo: boolean;
+  isMonorepo: z.boolean(),
   /** Monorepo root (may equal `repoRoot`), or null when not a monorepo. */
-  workspaceRoot: string | null;
+  workspaceRoot: z.string().nullable(),
   /** Workspace package `name` containing `cwd`, or null. */
-  workspacePackage: string | null;
-}
+  workspacePackage: z.string().nullable(),
+});
+export type RepoContext = z.infer<typeof RepoContext>;
 
 /**
  * Typed failure modes. The resolver never throws — every failure path
  * returns `Err<ResolverError>`.
  */
-export type ResolverError =
-  | { kind: 'NotAGitRepo'; cwd: string }
-  | { kind: 'BareRepo'; repoRoot: string }
-  | { kind: 'NoCommits'; repoRoot: string }
-  | { kind: 'GitUnavailable'; cause: string }
-  | { kind: 'Io'; path: string; cause: string };
+export const ResolverError = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('NotAGitRepo'), cwd: z.string() }),
+  z.object({ kind: z.literal('BareRepo'), repoRoot: z.string() }),
+  z.object({ kind: z.literal('NoCommits'), repoRoot: z.string() }),
+  z.object({ kind: z.literal('GitUnavailable'), cause: z.string() }),
+  z.object({ kind: z.literal('Io'), path: z.string(), cause: z.string() }),
+]);
+export type ResolverError = z.infer<typeof ResolverError>;
