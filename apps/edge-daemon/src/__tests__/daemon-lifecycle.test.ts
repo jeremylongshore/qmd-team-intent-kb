@@ -15,10 +15,10 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { existsSync, unlinkSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { EdgeDaemon } from '../daemon.js';
 import type { HealthServer } from '../health-server.js';
@@ -112,11 +112,7 @@ describe('EdgeDaemon health-server lifecycle race', () => {
 
   afterEach(async () => {
     await rm(spoolDir, { recursive: true, force: true });
-    try {
-      if (existsSync(config.pidFilePath)) unlinkSync(config.pidFilePath);
-    } catch {
-      /* ignore */
-    }
+    await rm(config.pidFilePath, { force: true });
   });
 
   it('stop() called immediately after start() fully closes the http.Server (no leak)', async () => {

@@ -69,9 +69,7 @@ export class EdgeDaemon {
       });
       this._healthServerStartPromise = this._healthServer
         .start()
-        .then(() => {
-          this.logger.info(`Health server listening on port ${this._healthServer!.port}`);
-        })
+        .then(() => this.logger.info(`Health server listening on port ${this._healthServer!.port}`))
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : String(err);
           this.logger.error(`Health server failed to start: ${msg}`);
