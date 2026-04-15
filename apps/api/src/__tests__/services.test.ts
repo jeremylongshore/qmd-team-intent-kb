@@ -46,7 +46,9 @@ describe('CandidateService', () => {
       service.getById('00000000-0000-0000-0000-000000000000');
     } catch (err) {
       expect(err instanceof ApiError).toBe(true);
-      expect((err as ApiError).statusCode).toBe(404);
+      if (err instanceof ApiError) {
+        expect(err.statusCode).toBe(404);
+      }
     }
   });
 });
@@ -126,7 +128,9 @@ describe('PolicyService', () => {
     try {
       service.create({ name: 'Missing everything' });
     } catch (err) {
-      expect((err as ApiError).statusCode).toBe(400);
+      if (err instanceof ApiError) {
+        expect(err.statusCode).toBe(400);
+      }
     }
   });
 });

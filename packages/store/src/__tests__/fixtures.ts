@@ -55,7 +55,7 @@ export function makeMemory(overrides?: Partial<CuratedMemory>): CuratedMemory {
     updatedAt: NOW,
     version: 1,
     ...overrides,
-  } as CuratedMemory;
+  } satisfies CuratedMemory;
 }
 
 export function makePolicy(overrides?: Partial<GovernancePolicy>): GovernancePolicy {
