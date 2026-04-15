@@ -4,37 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createDatabase, createTestDatabase, MemoryRepository } from '@qmd-team-intent-kb/store';
-import { computeContentHash } from '@qmd-team-intent-kb/common';
-import type { CuratedMemory } from '@qmd-team-intent-kb/schema';
 import { getStatus } from '../tools/status.js';
 import type { McpServerConfig } from '../config.js';
-
-const NOW = '2026-01-15T10:00:00.000Z';
-
-function makeMemory(overrides?: Partial<CuratedMemory>): CuratedMemory {
-  const content = 'Use Result<T,E> for fallible operations';
-  return {
-    id: randomUUID(),
-    candidateId: randomUUID(),
-    source: 'mcp',
-    content,
-    title: 'Error handling convention',
-    category: 'convention',
-    trustLevel: 'high',
-    sensitivity: 'internal',
-    author: { type: 'ai', id: 'mcp-server' },
-    tenantId: 'test-tenant',
-    metadata: { filePaths: [], tags: [] },
-    lifecycle: 'active',
-    contentHash: computeContentHash(content),
-    policyEvaluations: [],
-    promotedAt: NOW,
-    promotedBy: { type: 'human', id: 'user-1', name: 'Test User' },
-    updatedAt: NOW,
-    version: 1,
-    ...overrides,
-  } satisfies CuratedMemory;
-}
+import { makeMemory } from './fixtures.js';
 
 describe('getStatus() — empty DB', () => {
   let tmpDir: string;

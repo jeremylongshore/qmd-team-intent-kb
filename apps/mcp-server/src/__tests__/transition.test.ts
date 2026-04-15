@@ -5,38 +5,12 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createDatabase } from '@qmd-team-intent-kb/store';
 import { MemoryRepository } from '@qmd-team-intent-kb/store';
-import { computeContentHash } from '@qmd-team-intent-kb/common';
 import type { CuratedMemory } from '@qmd-team-intent-kb/schema';
 import { applyTransition } from '../tools/transition.js';
 import type { McpServerConfig } from '../config.js';
+import { FIXED_NOW, makeMemory } from './fixtures.js';
 
-const FIXED_NOW = '2026-01-15T10:00:00.000Z';
 const nowFn = () => FIXED_NOW;
-
-function makeMemory(overrides?: Partial<CuratedMemory>): CuratedMemory {
-  const content = 'Always validate inputs with Zod schemas';
-  return {
-    id: randomUUID(),
-    candidateId: randomUUID(),
-    source: 'mcp',
-    content,
-    title: 'Input validation pattern',
-    category: 'pattern',
-    trustLevel: 'high',
-    sensitivity: 'internal',
-    author: { type: 'ai', id: 'mcp-server' },
-    tenantId: 'test-tenant',
-    metadata: { filePaths: [], tags: [] },
-    lifecycle: 'active',
-    contentHash: computeContentHash(content),
-    policyEvaluations: [],
-    promotedAt: FIXED_NOW,
-    promotedBy: { type: 'human', id: 'user-1', name: 'Test User' },
-    updatedAt: FIXED_NOW,
-    version: 1,
-    ...overrides,
-  } satisfies CuratedMemory;
-}
 
 describe('applyTransition()', () => {
   let tmpDir: string;

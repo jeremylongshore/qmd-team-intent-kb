@@ -3,9 +3,8 @@ import { randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
 import { createTestDatabase } from '../database.js';
 import { MemoryRepository } from '../repositories/memory-repository.js';
-import { makeMemory, HASH_A, HASH_B } from './fixtures.js';
+import { makeMemory, HASH_A, HASH_B, NOW } from './fixtures.js';
 
-const NOW = '2026-01-15T10:00:00.000Z';
 const LATER = '2026-02-01T12:00:00.000Z';
 
 describe('MemoryRepository', () => {
