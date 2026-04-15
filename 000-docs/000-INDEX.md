@@ -41,6 +41,7 @@
 ### OD — Operations & Deployment (continued)
 
 - `016-OD-OPSM-branch-protection-checklist.md` — GitHub branch protection configuration checklist
+- `027-OD-OPSM-edge-daemon-runbook.md` — edge-daemon operations runbook (install, config, health check, recovery, upgrade, rollback)
 
 ### AA — After Action & Review
 
@@ -86,5 +87,6 @@
 | 024 | PP-CLOS | v1-scope-closeout           | v1 scope closeout            |
 | 025 | AA-AACR | v0.3.0-release-report       | v0.3.0 release report        |
 | 026 | AT-DSGN | repo-resolver-design        | repo-resolver package design |
+| 027 | OD-OPSM | edge-daemon-runbook         | edge-daemon operations runbook |
 
-## Next Available Sequence: 027
+## Next Available Sequence: 028
