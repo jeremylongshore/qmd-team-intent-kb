@@ -1,5 +1,5 @@
 {
-  "name": "@qmd-team-intent-kb/curator",
+  "name": "@qmd-team-intent-kb/test-fixtures",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,20 +14,11 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/index.ts",
-    "test": "vitest run",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@qmd-team-intent-kb/schema": "workspace:*",
-    "@qmd-team-intent-kb/common": "workspace:*",
-    "@qmd-team-intent-kb/store": "workspace:*",
-    "@qmd-team-intent-kb/policy-engine": "workspace:*",
-    "@qmd-team-intent-kb/claude-runtime": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.0",
-    "@qmd-team-intent-kb/test-fixtures": "workspace:*"
+    "@qmd-team-intent-kb/common": "workspace:*"
   }
 }

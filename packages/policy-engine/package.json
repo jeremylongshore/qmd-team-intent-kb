@@ -22,5 +22,8 @@
     "@qmd-team-intent-kb/schema": "workspace:*",
     "@qmd-team-intent-kb/common": "workspace:*",
     "@qmd-team-intent-kb/claude-runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@qmd-team-intent-kb/test-fixtures": "workspace:*"
   }
 }
