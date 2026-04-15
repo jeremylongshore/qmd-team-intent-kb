@@ -54,9 +54,10 @@ This repository does not publish on every release yet. When we decide to publish
 3. Build all packages: `pnpm -r build`.
 4. Dry run: `pnpm publish -r --filter '@qmd-team-intent-kb/schema' --filter '@qmd-team-intent-kb/common' --filter '@qmd-team-intent-kb/repo-resolver' --dry-run --access public --no-git-checks`.
 5. Publish: `pnpm publish -r --filter '@qmd-team-intent-kb/schema' --filter '@qmd-team-intent-kb/common' --filter '@qmd-team-intent-kb/repo-resolver' --access public`.
+   Packages with `private: true` are automatically skipped by pnpm.
+6. Tag the release (`git tag vX.Y.Z && git push --tags`) and draft the GitHub Release from the `CHANGELOG.md` excerpt.
 
 Per-package `--filter` flags avoid shell brace-expansion surprises that would occur with the quoted path-glob form `'./packages/{schema,common,repo-resolver}'`.
-Packages with `private: true` are automatically skipped by pnpm. 6. Tag the release (`git tag vX.Y.Z && git push --tags`) and draft the GitHub Release from the `CHANGELOG.md` excerpt.
 
 ## Guardrails
 
