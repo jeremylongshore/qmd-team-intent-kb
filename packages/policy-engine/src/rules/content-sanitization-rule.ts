@@ -46,13 +46,10 @@ export function evaluateContentSanitization(
   rule: PolicyRule,
   _context: EvaluationContext,
 ): RuleResult {
-  const params = rule.parameters as Record<string, unknown> | undefined;
-  const enabledPatternIds =
-    params && Array.isArray(params['enabledPatterns'])
-      ? (params['enabledPatterns'].filter((v): v is string => typeof v === 'string') as
-          | string[]
-          | undefined)
-      : undefined;
+  const params: Record<string, unknown> = rule.parameters;
+  const enabledPatternIds = Array.isArray(params['enabledPatterns'])
+    ? params['enabledPatterns'].filter((v): v is string => typeof v === 'string')
+    : undefined;
 
   const patterns =
     enabledPatternIds !== undefined

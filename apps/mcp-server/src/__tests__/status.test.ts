@@ -33,7 +33,7 @@ function makeMemory(overrides?: Partial<CuratedMemory>): CuratedMemory {
     updatedAt: NOW,
     version: 1,
     ...overrides,
-  } as CuratedMemory;
+  } satisfies CuratedMemory;
 }
 
 describe('getStatus() — empty DB', () => {
