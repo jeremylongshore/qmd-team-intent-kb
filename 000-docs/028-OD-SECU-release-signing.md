@@ -77,9 +77,10 @@ signatures are recorded in the public Rekor transparency log.
 cosign verify \
   --certificate-identity-regexp 'https://github\.com/jeremylongshore/qmd-team-intent-kb/\.github/workflows/release\.yml@refs/tags/v.*' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon:v0.4.0
+  ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon:<tag>
 ```
 
+Substitute `<tag>` with the release tag being verified (e.g. `v0.4.0`).
 A successful verification returns JSON describing the matched entries
 and exits 0. A failure exits non-zero and must block deployment.
 
@@ -89,9 +90,9 @@ and exits 0. A failure exits non-zero and must block deployment.
 # Install slsa-verifier:
 #   go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 slsa-verifier verify-image \
-  ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon:v0.4.0 \
+  ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon:<tag> \
   --source-uri github.com/jeremylongshore/qmd-team-intent-kb \
-  --source-tag v0.4.0
+  --source-tag <tag>
 ```
 
 This re-derives the builder identity from the attestation, confirms the
