@@ -91,6 +91,7 @@ export function makeConfig(overrides?: Partial<DaemonConfig>): DaemonConfig {
     supersessionThreshold: 0.6,
     pidFilePath: '/tmp/daemon-test-' + randomUUID() + '.pid',
     scopeByRepo: false,
+    healthHost: '127.0.0.1',
     maxRetries: 0, // no retries in tests by default — avoids delay
     retryBaseDelayMs: 0,
     retryMaxJitterMs: 0,

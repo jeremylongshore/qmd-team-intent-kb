@@ -153,6 +153,8 @@ Source: `apps/edge-daemon/src/config.ts`
 | `DAEMON_EXPORT_TARGET`          | No       | `kb-export-default`                | Export target identifier passed to git-exporter.                                        |
 | `DAEMON_SUPERSESSION_THRESHOLD` | No       | `0.6`                              | Jaccard similarity threshold above which a new candidate supersedes an existing memory. |
 | `DAEMON_PID_FILE`               | No       | `~/.qmd-team-intent-kb/daemon.pid` | Path of the PID lock file. Must be writable by the daemon user.                         |
+| `DAEMON_HEALTH_PORT`            | No       | `0` (disabled)                     | Port for the embedded HTTP health server. 0 = disabled.                                 |
+| `DAEMON_HEALTH_HOST`            | No       | `127.0.0.1`                        | Bind host for the HTTP health server. Set to `0.0.0.0` inside Docker/Kubernetes.        |
 
 `DAEMON_TENANT_ID` is the only required variable. The daemon exits immediately
 with code 1 if it is absent.
@@ -172,6 +174,11 @@ subcommand and a PID lock file. Pick the check that fits your environment.
 Set `DAEMON_HEALTH_PORT` to a non-zero port to enable the embedded HTTP
 server. Default is `0` (disabled).
 
+| Variable             | Default     | Description                                                                     |
+| -------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `DAEMON_HEALTH_PORT` | `0` (off)   | Port for the embedded HTTP health server. Set to a non-zero value to enable it. |
+| `DAEMON_HEALTH_HOST` | `127.0.0.1` | Host/address the health server binds to (see trade-off below).                  |
+
 | Route             | Running                    | Stopping                      | No cycle yet                     |
 | ----------------- | -------------------------- | ----------------------------- | -------------------------------- |
 | `GET /healthz`    | `200` `{"status":"ok"}`    | `503` `{"status":"stopping"}` | `200` `{"status":"ok"}`          |
@@ -181,14 +188,49 @@ server. Default is `0` (disabled).
 # Enable on install
 echo "DAEMON_HEALTH_PORT=9100" >> /etc/edge-daemon.env
 
-# Liveness probe
+# Liveness probe (default loopback bind)
 curl -fsS http://127.0.0.1:9100/healthz
 ```
 
-Unknown routes return `404 {"error":"not found"}`. The server binds
-`127.0.0.1` by default — inside Docker/Kubernetes you'll need to either
-port-forward via `docker run -p` or make the bind host configurable (see
-follow-up work in bead `qmd-team-intent-kb-dwe`).
+Unknown routes return `404 {"error":"not found"}`.
+
+#### `127.0.0.1` vs `0.0.0.0` — bind host trade-off
+
+The default bind host is `127.0.0.1` (loopback). This means the health
+endpoint is reachable only from within the same host — it is not accessible
+from other machines or from outside a container. This is the safest default
+for bare-metal and VM deployments where exposing an unauthenticated HTTP
+endpoint on a network interface would be undesirable.
+
+Inside a **Docker container** or **Kubernetes pod**, `127.0.0.1` is the
+container's own loopback interface. External liveness/readiness probes
+issued by the kubelet or Docker health-check mechanisms cannot reach it.
+The Dockerfile therefore sets `ENV DAEMON_HEALTH_HOST=0.0.0.0` so the
+server binds all container interfaces by default. Map the port to the host
+with `-p 9100:9100` (Docker) or a `containerPort` / `livenessProbe.httpGet`
+declaration (Kubernetes).
+
+On bare-metal or VM deployments where `DAEMON_HEALTH_HOST` is unset (or set
+to the empty string), the daemon falls back to `127.0.0.1` — existing
+behaviour is fully preserved.
+
+```sh
+# Docker: bind all interfaces and expose port 9100
+docker run -d \
+  -e DAEMON_TENANT_ID=my-team \
+  -e DAEMON_HEALTH_PORT=9100 \
+  -p 9100:9100 \
+  edge-daemon:latest
+# DAEMON_HEALTH_HOST defaults to 0.0.0.0 inside the image.
+
+# Kubernetes liveness probe (values.yaml / Pod spec excerpt)
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 9100
+  initialDelaySeconds: 5
+  periodSeconds: 10
+```
 
 ### Quick status check (any environment)
 

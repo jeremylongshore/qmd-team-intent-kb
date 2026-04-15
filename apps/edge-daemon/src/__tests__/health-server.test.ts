@@ -139,4 +139,48 @@ describe('HealthServer', () => {
       expect(server.port).toBeGreaterThan(0);
     });
   });
+
+  describe('host option', () => {
+    it('starts successfully with explicit host set to 127.0.0.1', async () => {
+      const srv = new HealthServer({
+        port: 0,
+        host: '127.0.0.1',
+        getState: () => 'running' as const,
+        getLastCycleResult: () => null,
+      });
+      await srv.start();
+      expect(srv.port).toBeGreaterThan(0);
+      const res = await httpGet(srv.port, '/healthz');
+      expect(res.status).toBe(200);
+      await srv.stop();
+    });
+
+    it('starts successfully without a host option (defaults to 127.0.0.1)', async () => {
+      const srv = new HealthServer({
+        port: 0,
+        getState: () => 'running' as const,
+        getLastCycleResult: () => null,
+      });
+      await srv.start();
+      expect(srv.port).toBeGreaterThan(0);
+      const res = await httpGet(srv.port, '/healthz');
+      expect(res.status).toBe(200);
+      await srv.stop();
+    });
+
+    it('starts successfully with host set to 0.0.0.0 and is reachable via 127.0.0.1', async () => {
+      const srv = new HealthServer({
+        port: 0,
+        host: '0.0.0.0',
+        getState: () => 'running' as const,
+        getLastCycleResult: () => null,
+      });
+      await srv.start();
+      expect(srv.port).toBeGreaterThan(0);
+      // When bound to 0.0.0.0, loopback connections still work
+      const res = await httpGet(srv.port, '/healthz');
+      expect(res.status).toBe(200);
+      await srv.stop();
+    });
+  });
 });
