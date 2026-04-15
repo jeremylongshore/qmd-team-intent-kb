@@ -29,7 +29,7 @@
     "eslint": "^10.2.0",
     "prettier": "^3.5.0",
     "typescript": "^5.7.0",
-    "typescript-eslint": "^8.24.0",
+    "typescript-eslint": "^8.58.2",
     "vitest": "^4.1.4"
   },
   "dependencies": {
