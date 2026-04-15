@@ -21,7 +21,6 @@ export function registerMemoryRoutes(app: FastifyInstance, service: MemoryServic
     return reply.send(memories);
   });
 
-  // Static segment — must come before the /:id wildcard
   app.get('/api/memories/by-hash/:hash', async (request, reply) => {
     try {
       const { hash } = request.params as { hash: string };

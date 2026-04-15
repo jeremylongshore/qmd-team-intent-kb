@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
 
-export type ErrorClass = 'transient' | 'permanent';
+type ErrorClass = 'transient' | 'permanent';
 
 /**
  * Classify an error as transient (eligible for retry) or permanent.
@@ -28,7 +28,7 @@ export function classifyError(err: unknown): ErrorClass {
   return 'permanent';
 }
 
-export interface RetryOptions {
+interface RetryOptions {
   maxRetries: number;
   baseDelayMs: number;
   maxJitterMs: number;

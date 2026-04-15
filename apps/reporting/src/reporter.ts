@@ -16,7 +16,7 @@ export interface ReporterConfig {
 }
 
 /**
- * Orchestrates all aggregators to produce comprehensive reports.
+ * Orchestrates all aggregators to produce system health reports.
  * Reads from store repositories directly — no API dependency.
  */
 export class Reporter {

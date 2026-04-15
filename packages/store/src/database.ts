@@ -65,7 +65,6 @@ export function createDatabase(options: DatabaseOptions): Database.Database {
       db.exec(ddl);
     }
 
-    // Run incremental migrations
     runMigrations(db);
 
     secureDbFile(options.path);

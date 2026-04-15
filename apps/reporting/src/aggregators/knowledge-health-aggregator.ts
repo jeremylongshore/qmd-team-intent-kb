@@ -31,18 +31,15 @@ export function aggregateKnowledgeHealth(
   const staleCount = staleMemories.length;
   const staleIds = staleMemories.map((m) => m.id);
 
-  // Category coverage: count only active memories
   const rawCategoryCounts = memoryRepo.countByCategory();
   const categoryCoverage: Record<string, number> = {};
   for (const cat of CATEGORIES) {
     categoryCoverage[cat] = rawCategoryCounts[cat] ?? 0;
   }
 
-  // Total active = count of memories in 'active' lifecycle
   const lifecycleCounts = memoryRepo.countByLifecycle();
   const totalActive = lifecycleCounts['active'] ?? 0;
 
-  // Freshness: 1 - (stale/active), clamped to [0, 1]
   const freshnessScore =
     totalActive > 0 ? Math.max(0, Math.min(1, 1 - staleCount / totalActive)) : 1;
 

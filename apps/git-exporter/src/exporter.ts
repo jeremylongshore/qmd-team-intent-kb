@@ -44,7 +44,6 @@ export function runExport(
   const skipped: string[] = [];
   let unchanged = 0;
 
-  // Write new/updated files (skip restricted/confidential)
   for (const item of changeset.toWrite) {
     if (isSensitivityRestricted(item.memory.sensitivity)) {
       skipped.push(item.memory.id);
@@ -52,7 +51,7 @@ export function runExport(
     }
     const content = formatMemoryAsMarkdown(item.memory);
 
-    // Skip if the file already contains identical content (idempotency guard)
+    // Skip if file content is already identical (idempotency guard)
     if (existsSync(item.filePath)) {
       const existing = readFileSync(item.filePath, 'utf8');
       if (existing === content) {
@@ -65,7 +64,6 @@ export function runExport(
     written.push(item.filePath);
   }
 
-  // Move archived/superseded files from category dir → archive/ (skip restricted/confidential)
   for (const item of changeset.toArchive) {
     if (isSensitivityRestricted(item.memory.sensitivity)) {
       skipped.push(item.memory.id);
@@ -76,14 +74,12 @@ export function runExport(
     archived.push(item.toPath);
   }
 
-  // Remove explicitly deleted files
   for (const filePath of changeset.toRemove) {
     if (removeFile(filePath)) {
       removed.push(filePath);
     }
   }
 
-  // Persist the new export state timestamp
   exportStateRepo.set(config.targetId, nowFn());
 
   return {

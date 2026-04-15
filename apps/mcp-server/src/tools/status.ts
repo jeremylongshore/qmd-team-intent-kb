@@ -12,7 +12,7 @@ export interface FeedbackEntry {
 }
 
 /** Database-derived counts */
-export interface MemoryCounts {
+interface MemoryCounts {
   byLifecycle: Record<string, number>;
   byCategory: Record<string, number>;
   byTenant: Record<string, number>;
@@ -20,7 +20,7 @@ export interface MemoryCounts {
 }
 
 /** Aggregate status response */
-export interface StatusResult {
+interface StatusResult {
   counts: MemoryCounts;
   recentFeedback: FeedbackEntry[];
   dbPath: string;

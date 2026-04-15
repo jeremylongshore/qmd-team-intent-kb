@@ -9,7 +9,6 @@ export function formatReportAsMarkdown(report: SystemHealthReport): string {
   lines.push(`Generated: ${report.generatedAt}`);
   lines.push('');
 
-  // Lifecycle distribution
   lines.push('## Lifecycle Distribution');
   lines.push('');
   lines.push('| State | Count |');
@@ -22,7 +21,6 @@ export function formatReportAsMarkdown(report: SystemHealthReport): string {
   lines.push(`Active rate: ${(report.lifecycle.activeRate * 100).toFixed(1)}%`);
   lines.push('');
 
-  // Curation outcomes
   lines.push('## Curation Outcomes');
   lines.push('');
   lines.push(`- Promoted: ${String(report.curation.promoted)}`);
@@ -32,7 +30,6 @@ export function formatReportAsMarkdown(report: SystemHealthReport): string {
   lines.push(`- Promotion rate: ${(report.curation.promotionRate * 100).toFixed(1)}%`);
   lines.push('');
 
-  // Knowledge health
   lines.push('## Knowledge Health');
   lines.push('');
   lines.push(`- Active memories: ${String(report.health.totalActive)}`);
@@ -48,7 +45,6 @@ export function formatReportAsMarkdown(report: SystemHealthReport): string {
   }
   lines.push('');
 
-  // Tenants
   if (report.tenants.length > 0) {
     lines.push('## Tenants');
     lines.push('');

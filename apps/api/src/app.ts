@@ -49,25 +49,21 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   const bodyLimit = deps.maxBodySize ?? 1_048_576;
   const app = Fastify({ logger: !deps.silent, bodyLimit });
 
-  // Middleware (order: rate-limiter → auth → sanitizer → routes)
   registerRateLimiter(app, deps.rateLimitMax ?? 100, deps.rateLimitWindowMs ?? 60000);
   registerApiKeyAuth(app, deps.apiKey);
   registerInputSanitizer(app, deps.maxBodySize ?? 1_048_576);
 
-  // Repositories
   const candidateRepo = new CandidateRepository(deps.db);
   const memoryRepo = new MemoryRepository(deps.db);
   const policyRepo = new PolicyRepository(deps.db);
   const auditRepo = new AuditRepository(deps.db);
 
-  // Services
   const candidateService = new CandidateService(candidateRepo);
   const memoryService = new MemoryService(memoryRepo, auditRepo);
   const policyService = new PolicyService(policyRepo);
   const healthService = new HealthService(deps.db);
   const searchService = new SearchService(memoryRepo);
 
-  // Routes
   registerHealthRoutes(app, healthService);
   registerCandidateRoutes(app, candidateService);
   registerMemoryRoutes(app, memoryService);
