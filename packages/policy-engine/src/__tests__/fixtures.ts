@@ -28,7 +28,7 @@ export function makeCandidate(overrides?: Record<string, unknown>): MemoryCandid
   });
 }
 
-export interface MakeContextOptions {
+interface MakeContextOptions {
   /** Extra hashes for dedup-check tests */
   existingHashes?: Set<string>;
   /** Context-level tenantId for tenant-match tests */
