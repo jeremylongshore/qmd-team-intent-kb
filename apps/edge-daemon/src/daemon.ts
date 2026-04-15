@@ -8,6 +8,8 @@ import type {
 import { acquireLock, releaseLock } from './lock.js';
 import { runCycle } from './cycle.js';
 import { HealthServer } from './health-server.js';
+import { resolveRepoContext } from '@qmd-team-intent-kb/repo-resolver';
+import type { RepoContext } from '@qmd-team-intent-kb/repo-resolver';
 
 /**
  * Edge Daemon — polls the spool directory, runs curation, and syncs the index.
@@ -27,6 +29,11 @@ export class EdgeDaemon {
   private readonly _signalHandlers: Array<{ signal: NodeJS.Signals; handler: () => void }> = [];
   private _healthServer: HealthServer | null = null;
   private _healthServerStartPromise: Promise<void> | null = null;
+  /**
+   * Repo context resolved once at startup. `undefined` until start() runs.
+   * `null` means resolution was attempted but failed (scoping disabled).
+   */
+  private _repoContext: RepoContext | null | undefined = undefined;
 
   constructor(
     private readonly config: DaemonConfig,
@@ -43,11 +50,15 @@ export class EdgeDaemon {
   }
 
   /**
-   * Start the daemon. Acquires PID lock and begins polling.
+   * Start the daemon. Acquires PID lock, resolves repo context once, and begins polling.
+   *
+   * Repo context is resolved here — after lock acquisition, before scheduling — so that
+   * the per-cycle cost of spawning `git` subprocesses is paid once for the lifetime of
+   * the long-lived process, not on every poll interval.
    *
    * @throws Error if the lock cannot be acquired (another instance running).
    */
-  start(): void {
+  async start(): Promise<void> {
     if (this._state !== 'idle') {
       throw new Error(`Cannot start daemon in state '${this._state}'`);
     }
@@ -60,6 +71,31 @@ export class EdgeDaemon {
     }
 
     this._state = 'running';
+
+    // Resolve repo context once, right after lock acquisition.
+    // Only pay the git subprocess cost when scopeByRepo is enabled; otherwise skip entirely.
+    if (this.config.scopeByRepo) {
+      try {
+        const repoResult = await resolveRepoContext(process.cwd());
+        if (repoResult.ok) {
+          this._repoContext = repoResult.value;
+          this.logger.info(
+            `[repo-scope] Resolved repo context at startup: ${repoResult.value.remoteUrl ?? '(no remoteUrl)'}`,
+          );
+        } else {
+          this._repoContext = null;
+          this.logger.warn(
+            `[repo-scope] Startup resolver failed (${repoResult.error.kind}) — repo-scope filter disabled`,
+          );
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        this._repoContext = null;
+        this.logger.warn(
+          `[repo-scope] Startup resolver threw unexpectedly: ${msg} — repo-scope filter disabled`,
+        );
+      }
+    }
 
     if ((this.config.healthPort ?? 0) > 0) {
       this._healthServer = new HealthServer({
@@ -145,7 +181,13 @@ export class EdgeDaemon {
 
     this._cycleInFlight = true;
     try {
-      this._lastCycleResult = await runCycle(this.config, this.deps, this.logger);
+      // Spread the stashed repoContext into deps so runCycle uses the pre-resolved value
+      // rather than spawning a fresh git subprocess on every cycle.
+      const depsWithContext =
+        this._repoContext !== undefined
+          ? { ...this.deps, repoContext: this._repoContext }
+          : this.deps;
+      this._lastCycleResult = await runCycle(this.config, depsWithContext, this.logger);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       this.logger.error(`Cycle failed: ${msg}`);

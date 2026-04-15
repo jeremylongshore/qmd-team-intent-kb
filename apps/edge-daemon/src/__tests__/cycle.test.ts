@@ -474,6 +474,63 @@ describe('runCycle', () => {
       expect(warnMsgs.length).toBeGreaterThan(0);
       expect(warnMsgs[0]?.message).toContain('disabled for this cycle');
     });
+
+    it('resolveRepoContext is NOT called when repoContext is pre-resolved in deps (at most once across 3 cycles)', async () => {
+      // This is the core invariant of the startup-resolution refactor:
+      // when deps.repoContext is provided (set at daemon startup), runCycle must use
+      // it directly without spawning a git subprocess per cycle.
+      const { resolveRepoContext } = await import('@qmd-team-intent-kb/repo-resolver');
+      const resolverSpy = vi.mocked(resolveRepoContext);
+
+      const preResolvedContext = {
+        repoRoot: '/home/user/daemon-repo',
+        repoName: 'daemon-repo',
+        remoteUrl: DAEMON_REMOTE,
+        branch: 'main',
+        commitSha: 'a'.repeat(40),
+        isMonorepo: false,
+        workspaceRoot: null,
+        workspacePackage: null,
+      };
+
+      const scopeOnConfig = makeConfig({ spoolDir, scopeByRepo: true });
+      const depsWithContext = { ...deps, repoContext: preResolvedContext };
+
+      // Run 3 consecutive cycles — resolver must never be called
+      await runCycle(scopeOnConfig, depsWithContext, logger);
+      await runCycle(scopeOnConfig, depsWithContext, logger);
+      await runCycle(scopeOnConfig, depsWithContext, logger);
+
+      expect(resolverSpy).not.toHaveBeenCalled();
+    });
+
+    it('repoContext null in deps — scoping disabled without calling resolver', async () => {
+      // deps.repoContext === null means startup resolution failed; cycle must NOT
+      // attempt its own resolution and must log the disabled warning.
+      const { resolveRepoContext } = await import('@qmd-team-intent-kb/repo-resolver');
+      const resolverSpy = vi.mocked(resolveRepoContext);
+
+      const candidate = makeCandidate({
+        content: 'Candidate when startup resolution failed — should pass through gracefully.',
+        metadata: { filePaths: [], tags: [], repoUrl: FOREIGN_REMOTE },
+      });
+      await writeSpoolFile(spoolDir, 'spool-001.jsonl', [candidate]);
+
+      const scopeOnConfig = makeConfig({ spoolDir, scopeByRepo: true });
+      const depsWithNullContext = { ...deps, repoContext: null };
+
+      const result = await runCycle(scopeOnConfig, depsWithNullContext, logger);
+
+      // All candidates pass through (scoping disabled)
+      expect(result.ingest.ingested).toBe(1);
+      // Resolver was not called — null means "already tried, already failed"
+      expect(resolverSpy).not.toHaveBeenCalled();
+      // Warning was logged
+      const warnMsgs = logger.messages.filter(
+        (m) => m.level === 'warn' && m.message.includes('repo-scope'),
+      );
+      expect(warnMsgs.length).toBeGreaterThan(0);
+    });
   });
 
   it('index update retries transient qmd errors and succeeds on final attempt', async () => {

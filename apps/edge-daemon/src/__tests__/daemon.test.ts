@@ -46,38 +46,38 @@ describe('EdgeDaemon', () => {
     expect(daemon.state).toBe('idle');
   });
 
-  it('transitions to running on start()', () => {
+  it('transitions to running on start()', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
+    await daemon.start();
     expect(daemon.state).toBe('running');
     void daemon.stop();
   });
 
-  it('creates PID file on start()', () => {
+  it('creates PID file on start()', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
+    await daemon.start();
     expect(existsSync(config.pidFilePath)).toBe(true);
     void daemon.stop();
   });
 
   it('removes PID file on stop()', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
+    await daemon.start();
     await daemon.stop();
     expect(existsSync(config.pidFilePath)).toBe(false);
   });
 
   it('transitions to stopped after stop()', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
+    await daemon.start();
     await daemon.stop();
     expect(daemon.state).toBe('stopped');
   });
 
-  it('throws when starting from non-idle state', () => {
+  it('throws when starting from non-idle state', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
-    expect(() => daemon.start()).toThrow('Cannot start daemon');
+    await daemon.start();
+    await expect(daemon.start()).rejects.toThrow('Cannot start daemon');
     void daemon.stop();
   });
 
@@ -121,7 +121,7 @@ describe('EdgeDaemon', () => {
 
   it('logs start and stop messages', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
+    await daemon.start();
     await daemon.stop();
     const messages = logger.messages.map((m) => m.message);
     expect(messages.some((m) => m.includes('Daemon started'))).toBe(true);

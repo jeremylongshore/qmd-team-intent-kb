@@ -71,21 +71,18 @@ describe('dispatch', () => {
   describe('start (default)', () => {
     it('returns exit code 0 with no args (defaults to start)', async () => {
       // start() with a valid config will succeed, then daemon loops — we just verify
-      // the code path doesn't blow up synchronously. We stop immediately via the
-      // returned daemon reference which is opaque here, so we rely on the lock file.
+      // the code path doesn't blow up. We rely on the lock file to confirm it ran.
       const pidPathLocal = tmpPidPath();
       const localDeps: CliDeps = {
         ...deps,
         config: makeConfig({ pidFilePath: pidPathLocal, pollIntervalMs: 9_999_999 }),
       };
 
-      // dispatch(['start']) calls daemon.start() which is synchronous and sets up
-      // a timer. The function returns 0. We confirm the lock was created then clean up.
-      const resultPromise = dispatch([], localDeps);
-      // start() is synchronous before returning 0 — the lock file exists immediately
-      expect(existsSync(pidPathLocal)).toBe(true);
-      const code = await resultPromise;
+      // dispatch(['start']) awaits daemon.start() which is now async (resolves repo
+      // context at startup). The lock file exists after start() resolves.
+      const code = await dispatch([], localDeps);
       expect(code).toBe(0);
+      expect(existsSync(pidPathLocal)).toBe(true);
 
       // Cleanup: unlock the PID so afterEach doesn't fail
       try {

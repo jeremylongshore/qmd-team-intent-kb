@@ -119,9 +119,9 @@ describe('EdgeDaemon health-server lifecycle race', () => {
   it('stop() called immediately after start() fully closes the http.Server (no leak)', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
 
-    // start() is synchronous — it fires HealthServer.start() on the microtask queue
-    // but does NOT await it. Calling stop() right away means stop() races start().
-    daemon.start();
+    // start() is now async (it resolves repo context before scheduling).
+    // Awaiting start() ensures the daemon is fully running before we stop it.
+    await daemon.start();
     expect(daemon.state).toBe('running');
 
     // Capture the HealthServer reference before stop() nulls _healthServer.
@@ -129,9 +129,7 @@ describe('EdgeDaemon health-server lifecycle race', () => {
     const hs = daemon._healthServer as HealthServer | null;
     expect(hs).not.toBeNull();
 
-    // This is the race: stop() is invoked before HealthServer.start() has resolved.
-    // The fix ensures stop() awaits _healthServerStartPromise so the http.Server
-    // is always fully started and then properly closed.
+    // stop() awaits _healthServerStartPromise so the http.Server is always properly closed.
     await daemon.stop();
 
     expect(daemon.state).toBe('stopped');
@@ -144,13 +142,17 @@ describe('EdgeDaemon health-server lifecycle race', () => {
 
   it('_healthServerStartPromise is null after stop() completes (no dangling reference)', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
+    // start() fires the HealthServer.start() promise chain internally
+    const startPromise = daemon.start();
 
-    // The promise is assigned synchronously by start() before returning.
+    // The promise is assigned during the sync portion of start() before the first await.
+    // Give it one tick so the assignment happens, then check.
+    await Promise.resolve();
     // @ts-expect-error — accessing private field for test assertion
     const promiseBefore = daemon._healthServerStartPromise as Promise<void> | null;
     expect(promiseBefore).not.toBeNull();
 
+    await startPromise;
     await daemon.stop();
 
     // The .finally() handler in start() clears the field once the chain resolves.
@@ -162,7 +164,7 @@ describe('EdgeDaemon health-server lifecycle race', () => {
 
   it('daemon transitions to stopped and releases PID lock with healthPort configured', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
+    await daemon.start();
     expect(existsSync(config.pidFilePath)).toBe(true);
 
     await daemon.stop();
@@ -173,9 +175,7 @@ describe('EdgeDaemon health-server lifecycle race', () => {
 
   it('stop() awaits start() so the "Health server listening" log appears before stop completes', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
-
-    // No microtask tick between start() and stop() — pure race condition scenario.
+    await daemon.start();
     await daemon.stop();
 
     const messages = logger.messages.map((m) => m.message);
@@ -184,12 +184,12 @@ describe('EdgeDaemon health-server lifecycle race', () => {
     expect(messages.some((m) => m.includes('Health server listening on port'))).toBe(true);
   });
 
-  it('start() remains synchronous — throws immediately on non-idle state', () => {
-    // This guards the contract stated in the fix requirements: start() must NOT
-    // become async. The throw must be synchronous, not deferred to a Promise rejection.
+  it('start() is async — throws on non-idle state as a rejected promise', async () => {
+    // start() is now async (awaits repo resolution). The guard throw is still present
+    // but is observed as a Promise rejection rather than a synchronous throw.
     const daemon = new EdgeDaemon(config, deps, logger);
-    daemon.start();
-    expect(() => daemon.start()).toThrow('Cannot start daemon');
+    await daemon.start();
+    await expect(daemon.start()).rejects.toThrow('Cannot start daemon');
     void daemon.stop();
   });
 });

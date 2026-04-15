@@ -62,29 +62,52 @@ export async function runCycle(
     return result;
   }
 
-  // Resolve repo context once per cycle for scopeByRepo filtering.
-  // On resolver error, degrade gracefully: log a warning and disable scoping for this cycle.
+  // Resolve repo context for scopeByRepo filtering.
+  //
+  // Preference order:
+  //   1. deps.repoContext is a RepoContext — use it directly (resolved once at startup).
+  //   2. deps.repoContext is null         — startup resolution failed; scoping disabled.
+  //   3. deps.repoContext is undefined    — not provided (e.g. test paths); fall back to
+  //                                         resolving here per-cycle (legacy behaviour).
+  //
+  // On any resolver error, degrade gracefully: log a warning and disable scoping.
   let resolvedRemoteUrl: string | null = null;
   if (config.scopeByRepo) {
-    try {
-      const repoResult = await resolveRepoContext(process.cwd());
-      if (repoResult.ok) {
-        resolvedRemoteUrl = repoResult.value.remoteUrl;
-        if (!resolvedRemoteUrl) {
-          logger.warn(
-            '[repo-scope] Resolver returned no remoteUrl — repo-scope filter disabled for this cycle',
-          );
-        }
-      } else {
+    if (deps.repoContext === null) {
+      // Startup resolution failed — scoping was already warned at daemon start
+      logger.warn(
+        '[repo-scope] Startup resolver failed — repo-scope filter disabled for this cycle',
+      );
+    } else if (deps.repoContext !== undefined) {
+      // Happy path: pre-resolved at startup, no subprocess cost this cycle
+      resolvedRemoteUrl = deps.repoContext.remoteUrl;
+      if (!resolvedRemoteUrl) {
         logger.warn(
-          `[repo-scope] Resolver failed (${repoResult.error.kind}) — repo-scope filter disabled for this cycle`,
+          '[repo-scope] Resolver returned no remoteUrl — repo-scope filter disabled for this cycle',
         );
       }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      logger.warn(
-        `[repo-scope] Resolver threw unexpectedly: ${msg} — repo-scope filter disabled for this cycle`,
-      );
+    } else {
+      // Fallback: deps.repoContext not provided — resolve now (backward-compat for tests)
+      try {
+        const repoResult = await resolveRepoContext(process.cwd());
+        if (repoResult.ok) {
+          resolvedRemoteUrl = repoResult.value.remoteUrl;
+          if (!resolvedRemoteUrl) {
+            logger.warn(
+              '[repo-scope] Resolver returned no remoteUrl — repo-scope filter disabled for this cycle',
+            );
+          }
+        } else {
+          logger.warn(
+            `[repo-scope] Resolver failed (${repoResult.error.kind}) — repo-scope filter disabled for this cycle`,
+          );
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        logger.warn(
+          `[repo-scope] Resolver threw unexpectedly: ${msg} — repo-scope filter disabled for this cycle`,
+        );
+      }
     }
   }
 
