@@ -119,9 +119,9 @@ describe('EdgeDaemon health-server lifecycle race', () => {
   it('stop() called immediately after start() fully closes the http.Server (no leak)', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
 
-    // start() is now async (it resolves repo context before scheduling).
-    // Awaiting start() ensures the daemon is fully running before we stop it.
-    await daemon.start();
+    // start() is sync — it schedules the first cycle and returns immediately.
+    // The daemon is fully running (state = 'running') as soon as start() returns.
+    daemon.start();
     expect(daemon.state).toBe('running');
 
     // Capture the HealthServer reference before stop() nulls _healthServer.
@@ -142,21 +142,21 @@ describe('EdgeDaemon health-server lifecycle race', () => {
 
   it('_healthServerStartPromise is null after stop() completes (no dangling reference)', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    // start() fires the HealthServer.start() promise chain internally
-    const startPromise = daemon.start();
+    // start() is sync — it assigns _healthServerStartPromise during the call.
+    // Calling start() then immediately checking the field (via a tick) confirms
+    // the promise is in-flight before stop() clears it.
+    daemon.start();
 
-    // The promise is assigned during the sync portion of start() before the first await.
-    // Give it one tick so the assignment happens, then check.
+    // Give the event loop one tick so any microtask continuations can run.
     await Promise.resolve();
     // @ts-expect-error — accessing private field for test assertion
     const promiseBefore = daemon._healthServerStartPromise as Promise<void> | null;
     expect(promiseBefore).not.toBeNull();
 
-    await startPromise;
     await daemon.stop();
 
-    // The .finally() handler in start() clears the field once the chain resolves.
-    // stop() awaits the chain, so by the time stop() returns the field is null.
+    // stop() awaits _healthServerStartPromise, so the .finally() handler that clears
+    // the field fires before stop() returns.
     // @ts-expect-error — accessing private field for test assertion
     const promiseAfter = daemon._healthServerStartPromise as Promise<void> | null;
     expect(promiseAfter).toBeNull();
@@ -164,7 +164,7 @@ describe('EdgeDaemon health-server lifecycle race', () => {
 
   it('daemon transitions to stopped and releases PID lock with healthPort configured', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    await daemon.start();
+    daemon.start();
     expect(existsSync(config.pidFilePath)).toBe(true);
 
     await daemon.stop();
@@ -173,9 +173,9 @@ describe('EdgeDaemon health-server lifecycle race', () => {
     expect(existsSync(config.pidFilePath)).toBe(false);
   });
 
-  it('stop() awaits start() so the "Health server listening" log appears before stop completes', async () => {
+  it('stop() awaits health-server start so the "Health server listening" log appears before stop completes', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    await daemon.start();
+    daemon.start();
     await daemon.stop();
 
     const messages = logger.messages.map((m) => m.message);
@@ -184,12 +184,11 @@ describe('EdgeDaemon health-server lifecycle race', () => {
     expect(messages.some((m) => m.includes('Health server listening on port'))).toBe(true);
   });
 
-  it('start() is async — throws on non-idle state as a rejected promise', async () => {
-    // start() is now async (awaits repo resolution). The guard throw is still present
-    // but is observed as a Promise rejection rather than a synchronous throw.
+  it('start() throws synchronously on non-idle state', () => {
+    // start() is sync — the non-idle guard throws immediately, not as a rejected Promise.
     const daemon = new EdgeDaemon(config, deps, logger);
-    await daemon.start();
-    await expect(daemon.start()).rejects.toThrow('Cannot start daemon');
+    daemon.start();
+    expect(() => daemon.start()).toThrow('Cannot start daemon');
     void daemon.stop();
   });
 });

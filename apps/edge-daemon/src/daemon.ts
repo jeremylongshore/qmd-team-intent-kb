@@ -50,15 +50,49 @@ export class EdgeDaemon {
   }
 
   /**
-   * Start the daemon. Acquires PID lock, resolves repo context once, and begins polling.
+   * Resolve repo context once before the polling loop starts.
    *
-   * Repo context is resolved here — after lock acquisition, before scheduling — so that
-   * the per-cycle cost of spawning `git` subprocesses is paid once for the lifetime of
-   * the long-lived process, not on every poll interval.
+   * Must be called before `start()` when `config.scopeByRepo` is true so that
+   * `_repoContext` is populated and cycles never need to spawn their own git subprocess.
    *
-   * @throws Error if the lock cannot be acquired (another instance running).
+   * Calling `bootstrap()` when `scopeByRepo` is false is a safe no-op.
+   * Calling `bootstrap()` multiple times is idempotent — re-resolution only runs
+   * when `_repoContext` is still `undefined` (i.e. unresolved).
    */
-  async start(): Promise<void> {
+  async bootstrap(): Promise<void> {
+    if (!this.config.scopeByRepo || this._repoContext !== undefined) return;
+
+    try {
+      const repoResult = await resolveRepoContext(process.cwd());
+      if (repoResult.ok) {
+        this._repoContext = repoResult.value;
+        this.logger.info(
+          `[repo-scope] Resolved repo context at startup: ${repoResult.value.remoteUrl ?? '(no remoteUrl)'}`,
+        );
+      } else {
+        this._repoContext = null;
+        this.logger.warn(
+          `[repo-scope] Startup resolver failed (${repoResult.error.kind}) — repo-scope filter disabled`,
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this._repoContext = null;
+      this.logger.warn(
+        `[repo-scope] Startup resolver threw unexpectedly: ${msg} — repo-scope filter disabled`,
+      );
+    }
+  }
+
+  /**
+   * Start the daemon. Acquires PID lock synchronously, then begins the polling loop.
+   *
+   * For production use, call `await bootstrap()` first so that repo context is
+   * pre-resolved and cycles never need to spawn their own git subprocess.
+   *
+   * @throws {Error} synchronously if the lock cannot be acquired or the daemon is not idle.
+   */
+  start(): void {
     if (this._state !== 'idle') {
       throw new Error(`Cannot start daemon in state '${this._state}'`);
     }
@@ -71,31 +105,6 @@ export class EdgeDaemon {
     }
 
     this._state = 'running';
-
-    // Resolve repo context once, right after lock acquisition.
-    // Only pay the git subprocess cost when scopeByRepo is enabled; otherwise skip entirely.
-    if (this.config.scopeByRepo) {
-      try {
-        const repoResult = await resolveRepoContext(process.cwd());
-        if (repoResult.ok) {
-          this._repoContext = repoResult.value;
-          this.logger.info(
-            `[repo-scope] Resolved repo context at startup: ${repoResult.value.remoteUrl ?? '(no remoteUrl)'}`,
-          );
-        } else {
-          this._repoContext = null;
-          this.logger.warn(
-            `[repo-scope] Startup resolver failed (${repoResult.error.kind}) — repo-scope filter disabled`,
-          );
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        this._repoContext = null;
-        this.logger.warn(
-          `[repo-scope] Startup resolver threw unexpectedly: ${msg} — repo-scope filter disabled`,
-        );
-      }
-    }
 
     if ((this.config.healthPort ?? 0) > 0) {
       this._healthServer = new HealthServer({

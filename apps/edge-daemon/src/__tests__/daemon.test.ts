@@ -74,10 +74,10 @@ describe('EdgeDaemon', () => {
     expect(daemon.state).toBe('stopped');
   });
 
-  it('throws when starting from non-idle state', async () => {
+  it('throws when starting from non-idle state', () => {
     const daemon = new EdgeDaemon(config, deps, logger);
-    await daemon.start();
-    await expect(daemon.start()).rejects.toThrow('Cannot start daemon');
+    daemon.start();
+    expect(() => daemon.start()).toThrow('Cannot start daemon');
     void daemon.stop();
   });
 

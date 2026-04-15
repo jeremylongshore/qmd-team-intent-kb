@@ -78,8 +78,8 @@ describe('dispatch', () => {
         config: makeConfig({ pidFilePath: pidPathLocal, pollIntervalMs: 9_999_999 }),
       };
 
-      // dispatch(['start']) awaits daemon.start() which is now async (resolves repo
-      // context at startup). The lock file exists after start() resolves.
+      // dispatch(['start']) awaits bootstrap() then calls sync start().
+      // The lock file exists after start() returns.
       const code = await dispatch([], localDeps);
       expect(code).toBe(0);
       expect(existsSync(pidPathLocal)).toBe(true);

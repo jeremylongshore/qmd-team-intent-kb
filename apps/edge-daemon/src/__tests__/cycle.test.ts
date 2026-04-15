@@ -390,6 +390,11 @@ describe('runCycle', () => {
     });
 
     beforeEach(async () => {
+      // clearAllMocks() resets call counts for vi.mock() auto-mocks between tests.
+      // vi.restoreAllMocks() in afterEach restores spy implementations but does not
+      // clear call history for module-level auto-mocks in Vitest v4 — so we clear
+      // explicitly here to prevent accumulation across the describe block.
+      vi.clearAllMocks();
       const { resolveRepoContext } = await import('@qmd-team-intent-kb/repo-resolver');
       vi.mocked(resolveRepoContext).mockResolvedValue(makeRepoResult(DAEMON_REMOTE));
     });
