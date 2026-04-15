@@ -3,6 +3,16 @@ import { basename } from 'node:path';
 import { ok, err, type Result } from '@qmd-team-intent-kb/common';
 import type { RepoContext, ResolverError } from './types.js';
 import { runGit } from './git.js';
+import { getDefaultCache, type RepoContextCache } from './cache.js';
+
+export interface ResolveOptions {
+  /**
+   * Override the cache used for this resolution. When omitted, the
+   * process-local default cache from `getDefaultCache()` is used.
+   * Pass a fresh `RepoContextCache` instance (or `null`) to bypass.
+   */
+  cache?: RepoContextCache | null;
+}
 
 /**
  * Resolve the git repo context enclosing `cwd`.
@@ -13,7 +23,10 @@ import { runGit } from './git.js';
  *
  * See 000-docs/026-AT-DSGN-repo-resolver-design.md for the full design.
  */
-export async function resolveRepoContext(cwd: string): Promise<Result<RepoContext, ResolverError>> {
+export async function resolveRepoContext(
+  cwd: string,
+  options: ResolveOptions = {},
+): Promise<Result<RepoContext, ResolverError>> {
   let canonicalCwd: string;
   try {
     canonicalCwd = await realpath(cwd);
@@ -23,6 +36,12 @@ export async function resolveRepoContext(cwd: string): Promise<Result<RepoContex
       path: cwd,
       cause: e instanceof Error ? e.message : String(e),
     });
+  }
+
+  const cache = options.cache === undefined ? getDefaultCache() : options.cache;
+  if (cache) {
+    const cached = cache.getByCwd(canonicalCwd);
+    if (cached) return ok(cached);
   }
 
   // Single consolidated git call — the hot path for warm caches in later beads.
@@ -90,6 +109,10 @@ export async function resolveRepoContext(cwd: string): Promise<Result<RepoContex
     workspaceRoot: null,
     workspacePackage: null,
   };
+
+  if (cache) {
+    cache.set(canonicalCwd, context);
+  }
 
   return ok(context);
 }
