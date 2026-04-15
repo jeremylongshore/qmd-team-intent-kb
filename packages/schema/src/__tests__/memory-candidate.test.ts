@@ -28,36 +28,31 @@ describe('MemoryCandidate', () => {
   });
 
   it('defaults trustLevel to medium', () => {
-    const input = makeMemoryCandidate();
-    delete (input as Record<string, unknown>)['trustLevel'];
+    const { trustLevel: _removed, ...input } = makeMemoryCandidate();
     const result = MemoryCandidate.parse(input);
     expect(result.trustLevel).toBe('medium');
   });
 
   it('defaults metadata to empty', () => {
-    const input = makeMemoryCandidate();
-    delete (input as Record<string, unknown>)['metadata'];
+    const { metadata: _removed, ...input } = makeMemoryCandidate();
     const result = MemoryCandidate.parse(input);
     expect(result.metadata.filePaths).toEqual([]);
     expect(result.metadata.tags).toEqual([]);
   });
 
   it('defaults prePolicyFlags to all false', () => {
-    const input = makeMemoryCandidate();
-    delete (input as Record<string, unknown>)['prePolicyFlags'];
+    const { prePolicyFlags: _removed, ...input } = makeMemoryCandidate();
     const result = MemoryCandidate.parse(input);
     expect(result.prePolicyFlags.potentialSecret).toBe(false);
   });
 
   it('rejects missing required id', () => {
-    const input = makeMemoryCandidate();
-    delete (input as Record<string, unknown>)['id'];
+    const { id: _removed, ...input } = makeMemoryCandidate();
     expect(() => MemoryCandidate.parse(input)).toThrow();
   });
 
   it('rejects missing required content', () => {
-    const input = makeMemoryCandidate();
-    delete (input as Record<string, unknown>)['content'];
+    const { content: _removed, ...input } = makeMemoryCandidate();
     expect(() => MemoryCandidate.parse(input)).toThrow();
   });
 

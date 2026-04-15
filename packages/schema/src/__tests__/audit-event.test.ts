@@ -26,15 +26,13 @@ describe('AuditEvent', () => {
   });
 
   it('defaults details to empty object', () => {
-    const input = makeAuditEvent();
-    delete (input as Record<string, unknown>)['details'];
+    const { details: _removed, ...input } = makeAuditEvent();
     const result = AuditEvent.parse(input);
     expect(result.details).toEqual({});
   });
 
   it('accepts optional reason', () => {
-    const input = makeAuditEvent();
-    delete (input as Record<string, unknown>)['reason'];
+    const { reason: _removed, ...input } = makeAuditEvent();
     const result = AuditEvent.parse(input);
     expect(result.reason).toBeUndefined();
   });
@@ -53,26 +51,22 @@ describe('AuditEvent', () => {
   });
 
   it('rejects missing action', () => {
-    const input = makeAuditEvent();
-    delete (input as Record<string, unknown>)['action'];
+    const { action: _removed, ...input } = makeAuditEvent();
     expect(() => AuditEvent.parse(input)).toThrow();
   });
 
   it('rejects missing memoryId', () => {
-    const input = makeAuditEvent();
-    delete (input as Record<string, unknown>)['memoryId'];
+    const { memoryId: _removed, ...input } = makeAuditEvent();
     expect(() => AuditEvent.parse(input)).toThrow();
   });
 
   it('rejects missing tenantId', () => {
-    const input = makeAuditEvent();
-    delete (input as Record<string, unknown>)['tenantId'];
+    const { tenantId: _removed, ...input } = makeAuditEvent();
     expect(() => AuditEvent.parse(input)).toThrow();
   });
 
   it('rejects missing actor', () => {
-    const input = makeAuditEvent();
-    delete (input as Record<string, unknown>)['actor'];
+    const { actor: _removed, ...input } = makeAuditEvent();
     expect(() => AuditEvent.parse(input)).toThrow();
   });
 

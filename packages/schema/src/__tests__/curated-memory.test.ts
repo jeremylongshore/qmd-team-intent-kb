@@ -69,22 +69,19 @@ describe('CuratedMemory', () => {
   });
 
   it('defaults sensitivity to internal', () => {
-    const input = makeCuratedMemory();
-    delete (input as Record<string, unknown>)['sensitivity'];
+    const { sensitivity: _removed, ...input } = makeCuratedMemory();
     const result = CuratedMemory.parse(input);
     expect(result.sensitivity).toBe('internal');
   });
 
   it('defaults version to 1', () => {
-    const input = makeCuratedMemory();
-    delete (input as Record<string, unknown>)['version'];
+    const { version: _removed, ...input } = makeCuratedMemory();
     const result = CuratedMemory.parse(input);
     expect(result.version).toBe(1);
   });
 
   it('defaults policyEvaluations to empty array', () => {
-    const input = makeCuratedMemory();
-    delete (input as Record<string, unknown>)['policyEvaluations'];
+    const { policyEvaluations: _removed, ...input } = makeCuratedMemory();
     const result = CuratedMemory.parse(input);
     expect(result.policyEvaluations).toEqual([]);
   });
