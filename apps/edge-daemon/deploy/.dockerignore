@@ -1,0 +1,30 @@
+# Exclude everything that the Docker build does not need.
+# The Dockerfile performs its own selective COPY; this file prevents large
+# directories from being sent as build context at all.
+
+# Build artifacts and caches
+**/dist
+**/node_modules
+**/*.tsbuildinfo
+.pnpm-store
+
+# Test fixtures and coverage
+**/coverage
+**/__tests__
+**/tests
+
+# Dev tooling and editor configs
+.git
+.github
+.husky
+.vscode
+.idea
+*.log
+
+# Docs and non-build assets — keep small context
+000-docs
+kb-export
+
+# OS noise
+.DS_Store
+Thumbs.db
