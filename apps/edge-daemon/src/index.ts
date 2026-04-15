@@ -16,5 +16,7 @@ export { PinoDaemonLogger } from './pino-logger.js';
 export { runCycle } from './cycle.js';
 export { runStalenessSweep } from './staleness.js';
 export { EdgeDaemon } from './daemon.js';
+export { HealthServer } from './health-server.js';
+export type { HealthServerOptions } from './health-server.js';
 export { writeFeedback, readRecentFeedback, getFeedbackPath } from './feedback.js';
 export type { FeedbackEntry } from './feedback.js';

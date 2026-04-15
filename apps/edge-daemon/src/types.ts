@@ -36,6 +36,8 @@ export interface DaemonConfig {
   supersessionThreshold: number;
   /** PID file path for locking. Default ~/.teamkb/daemon.pid. */
   pidFilePath: string;
+  /** HTTP health server port. 0 = disabled. Default 0. */
+  healthPort?: number;
   /** Maximum retry attempts for transient step errors. Default 3. */
   maxRetries: number;
   /** Base delay in ms for exponential backoff. Default 500. */

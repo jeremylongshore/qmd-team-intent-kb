@@ -35,6 +35,7 @@ const DEFAULTS = {
  *   DAEMON_EXPORT_TARGET   — export target identifier
  *   DAEMON_SUPERSESSION_THRESHOLD — Jaccard threshold (default 0.6)
  *   DAEMON_PID_FILE        — PID file path
+ *   DAEMON_HEALTH_PORT     — HTTP health server port (default 0 = disabled)
  *   DAEMON_MAX_RETRIES     — max retries for transient errors (default 3)
  *   DAEMON_RETRY_BASE_DELAY — base backoff delay in ms (default 500)
  *   DAEMON_RETRY_MAX_JITTER — max jitter in ms added to backoff (default 200)
@@ -73,6 +74,7 @@ export function loadDaemonConfig(
       env['DAEMON_SUPERSESSION_THRESHOLD'] ?? String(DEFAULTS.supersessionThreshold),
     ),
     pidFilePath: env['DAEMON_PID_FILE'] ?? resolveTeamKbPath('daemon.pid'),
+    healthPort: parseNonNegativeInt(env['DAEMON_HEALTH_PORT'], 0),
     maxRetries: parsePositiveInt(env['DAEMON_MAX_RETRIES'], DEFAULTS.maxRetries),
     retryBaseDelayMs: parsePositiveInt(env['DAEMON_RETRY_BASE_DELAY'], DEFAULTS.retryBaseDelayMs),
     retryMaxJitterMs: parsePositiveInt(env['DAEMON_RETRY_MAX_JITTER'], DEFAULTS.retryMaxJitterMs),
@@ -83,6 +85,13 @@ function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (value === undefined) return fallback;
   const parsed = parseInt(value, 10);
   if (Number.isNaN(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
+function parseNonNegativeInt(value: string | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed) || parsed < 0) return fallback;
   return parsed;
 }
 
