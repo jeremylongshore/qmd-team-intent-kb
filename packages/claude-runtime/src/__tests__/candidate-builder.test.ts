@@ -110,4 +110,43 @@ describe('buildCandidate', () => {
       expect(result.value.candidate.trustLevel).toBe('high');
     }
   });
+
+  it('uses repoName from enriched GitContext as projectContext when event has none', () => {
+    const result = buildCandidate(
+      makeEvent({ projectContext: undefined }),
+      makeGitContext({ repoName: 'my-repo' }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.candidate.metadata.projectContext).toBe('my-repo');
+    }
+  });
+
+  it('event projectContext takes precedence over enriched repoName', () => {
+    const result = buildCandidate(
+      makeEvent({ projectContext: 'explicit-project' }),
+      makeGitContext({ repoName: 'my-repo' }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.candidate.metadata.projectContext).toBe('explicit-project');
+    }
+  });
+
+  it('enriched commitSha is preserved on GitContext', () => {
+    const commitSha = 'a'.repeat(40);
+    const ctx = makeGitContext({ commitSha });
+    expect(ctx.commitSha).toBe(commitSha);
+  });
+
+  it('projectContext remains undefined when event has none and repoName absent', () => {
+    const result = buildCandidate(
+      makeEvent({ projectContext: undefined }),
+      makeGitContext({ repoName: undefined }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.candidate.metadata.projectContext).toBeUndefined();
+    }
+  });
 });
