@@ -79,8 +79,19 @@ describe('resolveRepoContext + cache integration', () => {
     return fx;
   }
   afterEach(() => {
-    while (fixtures.length > 0) fixtures.pop()?.cleanup();
+    // Guard each cleanup — if one throws, later fixtures still get cleaned up.
+    const errors: unknown[] = [];
+    while (fixtures.length > 0) {
+      try {
+        fixtures.pop()?.cleanup();
+      } catch (e) {
+        errors.push(e);
+      }
+    }
     clearCache();
+    if (errors.length > 0) {
+      throw new AggregateError(errors, `${errors.length} fixture cleanup(s) failed`);
+    }
   });
 
   it('second call hits the cache (same RepoContext reference)', async () => {

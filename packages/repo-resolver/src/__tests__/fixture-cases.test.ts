@@ -35,8 +35,18 @@ function track<T extends Fixture>(fx: T): T {
 }
 
 afterEach(() => {
+  // Guard each cleanup — if one throws, later fixtures still get cleaned up
+  // rather than leaking tmp dirs onto the CI filesystem.
+  const errors: unknown[] = [];
   while (fixtures.length > 0) {
-    fixtures.pop()?.cleanup();
+    try {
+      fixtures.pop()?.cleanup();
+    } catch (e) {
+      errors.push(e);
+    }
+  }
+  if (errors.length > 0) {
+    throw new AggregateError(errors, `${errors.length} fixture cleanup(s) failed`);
   }
 });
 
