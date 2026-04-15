@@ -119,7 +119,7 @@ describe('HealthServer', () => {
     it('stop() resolves cleanly', async () => {
       const srv = new HealthServer({
         port: 0,
-        getState: () => 'running' as DaemonState,
+        getState: () => 'running' as const,
         getLastCycleResult: () => null,
       });
       await srv.start();
@@ -129,7 +129,7 @@ describe('HealthServer', () => {
     it('stop() on a never-started server resolves cleanly', async () => {
       const srv = new HealthServer({
         port: 0,
-        getState: () => 'running' as DaemonState,
+        getState: () => 'running' as const,
         getLastCycleResult: () => null,
       });
       await expect(srv.stop()).resolves.toBeUndefined();

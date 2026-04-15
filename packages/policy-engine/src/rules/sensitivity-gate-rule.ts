@@ -32,7 +32,7 @@ export function evaluateSensitivityGate(
   _context: EvaluationContext,
 ): RuleResult {
   const classification = classifyContent(candidate.content);
-  const blockedLevels = parseBlockedLevels(rule.parameters as Record<string, unknown> | undefined);
+  const blockedLevels = parseBlockedLevels(rule.parameters);
 
   const isBlocked = blockedLevels.includes(classification.sensitivityLevel);
 
