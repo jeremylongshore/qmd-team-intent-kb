@@ -5,6 +5,13 @@ import type { DaemonLogger } from './types.js';
 interface RepoScopeResult {
   kept: MemoryCandidate[];
   skipped: number;
+  /**
+   * Candidates kept despite having no `metadata.repoUrl`. They bypassed
+   * scoping entirely — the flag's isolation is weaker than the name implies.
+   * Operators enabling `scopeByRepo=true` need visibility into how many
+   * candidates are unscoped per cycle.
+   */
+  unscoped: number;
 }
 
 /**
@@ -22,12 +29,14 @@ export function filterByRepoScope(
 ): RepoScopeResult {
   const kept: MemoryCandidate[] = [];
   let skipped = 0;
+  let unscoped = 0;
 
   for (const candidate of candidates) {
     const candidateUrl = candidate.metadata.repoUrl;
 
     if (!candidateUrl) {
       kept.push(candidate);
+      unscoped++;
       continue;
     }
 
@@ -41,7 +50,11 @@ export function filterByRepoScope(
     }
   }
 
-  return { kept, skipped };
+  if (unscoped > 0) {
+    logger.info(`[repo-scope] ${unscoped} candidate(s) kept without repoUrl (bypassed scoping)`);
+  }
+
+  return { kept, skipped, unscoped };
 }
 
 /** Normalize a remote URL for comparison: trim whitespace, strip trailing .git */
