@@ -49,6 +49,9 @@ importers:
         specifier: ^5.8.5
         version: 5.8.5
     devDependencies:
+      '@qmd-team-intent-kb/test-fixtures':
+        specifier: workspace:*
+        version: link:../../packages/test-fixtures
       '@types/better-sqlite3':
         specifier: ^7.6.0
         version: 7.6.13
@@ -71,6 +74,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/store
     devDependencies:
+      '@qmd-team-intent-kb/test-fixtures':
+        specifier: workspace:*
+        version: link:../../packages/test-fixtures
       '@types/better-sqlite3':
         specifier: ^7.6.0
         version: 7.6.13
@@ -105,6 +111,9 @@ importers:
         specifier: ^13.0.0
         version: 13.1.3
     devDependencies:
+      '@qmd-team-intent-kb/test-fixtures':
+        specifier: workspace:*
+        version: link:../../packages/test-fixtures
       '@types/better-sqlite3':
         specifier: ^7.6.0
         version: 7.6.13
@@ -145,6 +154,10 @@ importers:
       fast-glob:
         specifier: ^3.3.3
         version: 3.3.3
+    devDependencies:
+      '@qmd-team-intent-kb/test-fixtures':
+        specifier: workspace:*
+        version: link:../../packages/test-fixtures
 
   apps/reporting:
     dependencies:
@@ -158,6 +171,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/store
     devDependencies:
+      '@qmd-team-intent-kb/test-fixtures':
+        specifier: workspace:*
+        version: link:../../packages/test-fixtures
       '@types/better-sqlite3':
         specifier: ^7.6.0
         version: 7.6.13
@@ -187,6 +203,10 @@ importers:
       '@qmd-team-intent-kb/schema':
         specifier: workspace:*
         version: link:../schema
+    devDependencies:
+      '@qmd-team-intent-kb/test-fixtures':
+        specifier: workspace:*
+        version: link:../test-fixtures
 
   packages/qmd-adapter:
     dependencies:
@@ -224,9 +244,21 @@ importers:
         specifier: ^12.9.0
         version: 12.9.0
     devDependencies:
+      '@qmd-team-intent-kb/test-fixtures':
+        specifier: workspace:*
+        version: link:../test-fixtures
       '@types/better-sqlite3':
         specifier: ^7.6.0
         version: 7.6.13
+
+  packages/test-fixtures:
+    dependencies:
+      '@qmd-team-intent-kb/common':
+        specifier: workspace:*
+        version: link:../common
+      '@qmd-team-intent-kb/schema':
+        specifier: workspace:*
+        version: link:../schema
 
 packages:
 

@@ -17,6 +17,7 @@
     { "path": "../../packages/qmd-adapter" },
     { "path": "../../packages/repo-resolver" },
     { "path": "../curator" },
-    { "path": "../git-exporter" }
+    { "path": "../git-exporter" },
+    { "path": "../../packages/test-fixtures" }
   ]
 }

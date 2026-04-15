@@ -47,7 +47,14 @@ describe('/api/policies', () => {
   });
 
   it('POST with missing rules returns 400', async () => {
-    const res = await injectJson(app, 'POST', '/api/policies', makePolicy({ rules: [] })); // min(1) — empty rules invalid
+    // makePolicy uses Zod .parse() which would reject empty rules client-side;
+    // send a raw body to exercise the server-side rejection path.
+    const res = await injectJson(app, 'POST', '/api/policies', {
+      name: 'No rules',
+      tenantId: 'team-alpha',
+      rules: [],
+      enabled: true,
+    });
     expect(res.status).toBe(400);
   });
 

@@ -3,6 +3,7 @@
   "references": [
     { "path": "packages/common" },
     { "path": "packages/schema" },
+    { "path": "packages/test-fixtures" },
     { "path": "packages/store" },
     { "path": "packages/qmd-adapter" },
     { "path": "packages/claude-runtime" },

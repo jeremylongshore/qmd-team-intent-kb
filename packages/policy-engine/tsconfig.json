@@ -8,5 +8,10 @@
     "declarationMap": true
   },
   "include": ["src"],
-  "references": [{ "path": "../schema" }, { "path": "../common" }, { "path": "../claude-runtime" }]
+  "references": [
+    { "path": "../schema" },
+    { "path": "../common" },
+    { "path": "../claude-runtime" },
+    { "path": "../test-fixtures" }
+  ]
 }
