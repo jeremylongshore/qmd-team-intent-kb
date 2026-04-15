@@ -11,7 +11,7 @@
 ## Overview
 
 The edge-daemon is the local process that bridges Claude Code sessions to the
-team knowledge-base control plane.  It runs as a long-lived background service
+team knowledge-base control plane. It runs as a long-lived background service
 on every developer machine or CI host that participates in a tenant.
 
 Responsibilities:
@@ -24,8 +24,8 @@ Responsibilities:
 - Trigger qmd index updates so local search reflects new memories.
 - Deprecate memories that have not been accessed within the staleness window.
 
-The daemon is a single Node.js process.  It uses a PID lock file to prevent
-multiple concurrent instances.  All state is local to the machine; there is no
+The daemon is a single Node.js process. It uses a PID lock file to prevent
+multiple concurrent instances. All state is local to the machine; there is no
 peer-to-peer coordination between daemon instances.
 
 ---
@@ -50,7 +50,7 @@ peer-to-peer coordination between daemon instances.
    ```
 
 2. Create the environment file at `/etc/edge-daemon/env` (mode `0640`,
-   owner `root:edge-daemon`).  This file must contain at least:
+   owner `root:edge-daemon`). This file must contain at least:
 
    ```
    DAEMON_TENANT_ID=<your-tenant>
@@ -132,32 +132,32 @@ at `/var/lib/edge-daemon`.
 
 ## Configuration
 
-All configuration is via environment variables.  There are no CLI flags; the
+All configuration is via environment variables. There are no CLI flags; the
 only optional positional argument to the daemon is the subcommand (`start`,
 `stop`, `status`, `run-once`), which defaults to `start`.
 
 Source: `apps/edge-daemon/src/config.ts`
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `DAEMON_TENANT_ID` | Yes | — | Tenant identifier. Used to scope memory retrieval and qmd index namespacing. |
-| `DAEMON_POLL_INTERVAL` | No | `10000` | Milliseconds between spool poll cycles. |
-| `DAEMON_MAX_CANDIDATES` | No | `100` | Maximum candidates processed per cycle. |
-| `DAEMON_MAX_SPOOL_SIZE` | No | `10485760` | Maximum spool file size in bytes (10 MB). Files larger than this are skipped. |
-| `DAEMON_ENABLE_EXPORT` | No | `true` | Enable incremental git-export after each cycle. |
-| `DAEMON_ENABLE_INDEX` | No | `true` | Enable qmd index update after each cycle. |
-| `DAEMON_ENABLE_STALENESS` | No | `true` | Enable automatic staleness sweep (deprecation of old memories). |
-| `DAEMON_STALE_DAYS` | No | `90` | Days after last access before a memory is auto-deprecated. |
-| `DAEMON_SPOOL_DIR` | No | `~/.qmd-team-intent-kb/spool` | Directory watched for incoming candidate files. |
-| `DAEMON_EXPORT_DIR` | No | `kb-export/` | Output directory for git-exporter Markdown files. |
-| `DAEMON_EXPORT_TARGET` | No | `kb-export-default` | Export target identifier passed to git-exporter. |
-| `DAEMON_SUPERSESSION_THRESHOLD` | No | `0.6` | Jaccard similarity threshold above which a new candidate supersedes an existing memory. |
-| `DAEMON_PID_FILE` | No | `~/.qmd-team-intent-kb/daemon.pid` | Path of the PID lock file. Must be writable by the daemon user. |
+| Variable                        | Required | Default                            | Description                                                                             |
+| ------------------------------- | -------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
+| `DAEMON_TENANT_ID`              | Yes      | —                                  | Tenant identifier. Used to scope memory retrieval and qmd index namespacing.            |
+| `DAEMON_POLL_INTERVAL`          | No       | `10000`                            | Milliseconds between spool poll cycles.                                                 |
+| `DAEMON_MAX_CANDIDATES`         | No       | `100`                              | Maximum candidates processed per cycle.                                                 |
+| `DAEMON_MAX_SPOOL_SIZE`         | No       | `10485760`                         | Maximum spool file size in bytes (10 MB). Files larger than this are skipped.           |
+| `DAEMON_ENABLE_EXPORT`          | No       | `true`                             | Enable incremental git-export after each cycle.                                         |
+| `DAEMON_ENABLE_INDEX`           | No       | `true`                             | Enable qmd index update after each cycle.                                               |
+| `DAEMON_ENABLE_STALENESS`       | No       | `true`                             | Enable automatic staleness sweep (deprecation of old memories).                         |
+| `DAEMON_STALE_DAYS`             | No       | `90`                               | Days after last access before a memory is auto-deprecated.                              |
+| `DAEMON_SPOOL_DIR`              | No       | `~/.qmd-team-intent-kb/spool`      | Directory watched for incoming candidate files.                                         |
+| `DAEMON_EXPORT_DIR`             | No       | `kb-export/`                       | Output directory for git-exporter Markdown files.                                       |
+| `DAEMON_EXPORT_TARGET`          | No       | `kb-export-default`                | Export target identifier passed to git-exporter.                                        |
+| `DAEMON_SUPERSESSION_THRESHOLD` | No       | `0.6`                              | Jaccard similarity threshold above which a new candidate supersedes an existing memory. |
+| `DAEMON_PID_FILE`               | No       | `~/.qmd-team-intent-kb/daemon.pid` | Path of the PID lock file. Must be writable by the daemon user.                         |
 
-`DAEMON_TENANT_ID` is the only required variable.  The daemon exits immediately
+`DAEMON_TENANT_ID` is the only required variable. The daemon exits immediately
 with code 1 if it is absent.
 
-Boolean variables accept only the literal strings `true` or `false`.  Any other
+Boolean variables accept only the literal strings `true` or `false`. Any other
 value falls back to the default.
 
 ---
@@ -165,7 +165,7 @@ value falls back to the default.
 ## Health Check
 
 The edge-daemon does not expose an HTTP health endpoint; it is a single-process
-local daemon.  Use the PID lock file and `status` subcommand to determine whether
+local daemon. Use the PID lock file and `status` subcommand to determine whether
 it is running.
 
 ### Quick status check
@@ -250,7 +250,7 @@ docker logs --tail 100 edge-daemon
 
 ### Log format
 
-The daemon uses `ConsoleDaemonLogger` (structured text, not JSON).  Each line
+The daemon uses `ConsoleDaemonLogger` (structured text, not JSON). Each line
 is prefixed with the ISO-8601 timestamp and severity level:
 
 ```
@@ -291,7 +291,7 @@ rm "${DAEMON_PID_FILE:-$HOME/.qmd-team-intent-kb/daemon.pid}"
 
 ### Daemon exits immediately after starting (exit code 1)
 
-Check the logs for a configuration or database error.  Common causes:
+Check the logs for a configuration or database error. Common causes:
 
 - SQLite database path not writable by the daemon user.
 - `DAEMON_SPOOL_DIR` does not exist and cannot be created (permissions).
@@ -301,20 +301,20 @@ Check the logs for a configuration or database error.  Common causes:
 ### Spool files not processed
 
 - Verify `DAEMON_SPOOL_DIR` points to the same directory that `claude-runtime`
-  is writing to.  If `DAEMON_SPOOL_DIR` is unset on both sides, both will use
+  is writing to. If `DAEMON_SPOOL_DIR` is unset on both sides, both will use
   the `common` package default (`resolveTeamKbPath`), which should agree.
 - Check that the daemon user can read files in the spool directory.
 
 ### qmd index not updating
 
 - Confirm `DAEMON_ENABLE_INDEX=true` (the default).
-- Verify the `qmd` CLI is on `PATH` as seen by the daemon process.  On systemd,
+- Verify the `qmd` CLI is on `PATH` as seen by the daemon process. On systemd,
   PATH is not inherited from the user shell — add it explicitly in the
   environment file if needed.
 
 ### High CPU or tight restart loop (systemd)
 
-The `RestartSec=5s` guard in the unit file prevents spinning.  If the daemon is
+The `RestartSec=5s` guard in the unit file prevents spinning. If the daemon is
 restarting repeatedly, check for a hard configuration error (see above).
 Temporarily disable auto-restart while diagnosing:
 
@@ -344,7 +344,7 @@ docker restart edge-daemon
 
 ### Manual single cycle (bypass daemon loop)
 
-Run exactly one cycle without starting the long-running loop.  Useful for
+Run exactly one cycle without starting the long-running loop. Useful for
 diagnosing spool processing issues:
 
 ```sh
@@ -362,7 +362,7 @@ rm "${DAEMON_PID_FILE:-$HOME/.qmd-team-intent-kb/daemon.pid}"
 
 ### Recover from corrupted SQLite database
 
-The SQLite database (`teamkb.db`) is managed by `packages/store`.  If it is
+The SQLite database (`teamkb.db`) is managed by `packages/store`. If it is
 corrupted:
 
 1. Stop the daemon.

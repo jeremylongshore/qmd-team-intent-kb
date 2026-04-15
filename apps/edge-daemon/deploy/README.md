@@ -3,12 +3,12 @@
 This directory contains ready-to-use deployment artifacts for the
 `@qmd-team-intent-kb/edge-daemon` process.
 
-| File | Purpose |
-|---|---|
-| `edge-daemon.service` | systemd unit (Linux / server installs) |
-| `com.intentsolutions.edge-daemon.plist` | launchd agent (macOS developer machines) |
-| `Dockerfile` | Multi-stage container image (build context: repo root) |
-| `.dockerignore` | Companion to Dockerfile; keeps build context minimal |
+| File                                    | Purpose                                                |
+| --------------------------------------- | ------------------------------------------------------ |
+| `edge-daemon.service`                   | systemd unit (Linux / server installs)                 |
+| `com.intentsolutions.edge-daemon.plist` | launchd agent (macOS developer machines)               |
+| `Dockerfile`                            | Multi-stage container image (build context: repo root) |
+| `.dockerignore`                         | Companion to Dockerfile; keeps build context minimal   |
 
 ## Quick start
 
