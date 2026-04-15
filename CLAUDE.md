@@ -128,7 +128,7 @@ Incremental export of curated memories to `kb-export/` as Markdown with YAML fro
 
 - `apps/api/` — Control plane REST API (Fastify)
 - `apps/curator/` — Memory promotion, dedupe, supersession engine
-- `apps/edge-daemon/` — Local qmd sync daemon (**scaffolded**)
+- `apps/edge-daemon/` — Local qmd sync daemon (cycle, lock, health, CLI subcommands)
 - `apps/git-exporter/` — Git mirror/export service
 - `apps/reporting/` — Analytics and lifecycle reporting
 - `packages/schema/` — Zod domain model, lifecycle state machine
@@ -136,10 +136,10 @@ Incremental export of curated memories to `kb-export/` as Markdown with YAML fro
 - `packages/qmd-adapter/` — qmd CLI wrapper, search, index management
 - `packages/claude-runtime/` — Session capture, secret scanning, spool
 - `packages/policy-engine/` — Deterministic governance rule pipeline
-- `packages/repo-resolver/` — Multi-repo context resolver (**scaffolded**)
+- `packages/repo-resolver/` — Multi-repo context resolver (resolveRepoContext, tenant derivation, monorepo detection, cache)
 - `packages/common/` — Result type, hashing, path utilities
 
-**Still scaffolded** (TODO placeholder only): `packages/repo-resolver`, `apps/edge-daemon`
+**All packages and apps are now implemented.** Edge-daemon production hardening (HTTP health, structured logging, retry/backoff, deploy artifacts) tracked under epic `qmd-team-intent-kb-1x6`.
 
 ## Code Conventions
 
