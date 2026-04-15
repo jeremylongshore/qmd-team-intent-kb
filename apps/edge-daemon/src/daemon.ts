@@ -46,7 +46,7 @@ export class EdgeDaemon {
    *
    * @throws Error if the lock cannot be acquired (another instance running).
    */
-  async start(): Promise<void> {
+  start(): void {
     if (this._state !== 'idle') {
       throw new Error(`Cannot start daemon in state '${this._state}'`);
     }
@@ -66,8 +66,13 @@ export class EdgeDaemon {
         getState: () => this._state,
         getLastCycleResult: () => this._lastCycleResult,
       });
-      await this._healthServer.start();
-      this.logger.info(`Health server listening on port ${this._healthServer.port}`);
+      this._healthServer
+        .start()
+        .then(() => this.logger.info(`Health server listening on port ${this._healthServer!.port}`))
+        .catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.error(`Health server failed to start: ${msg}`);
+        });
     }
 
     this.registerSignalHandlers();
