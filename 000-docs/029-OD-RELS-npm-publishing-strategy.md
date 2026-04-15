@@ -52,10 +52,11 @@ This repository does not publish on every release yet. When we decide to publish
 1. Ensure `pnpm validate` is green on the branch to be released.
 2. Bump versions across the workspace (`pnpm version:bump X.Y.Z` when available, or edit the three publishable package.json files manually and keep them in lockstep with the root version per the single-version strategy in `008-OD-RELS-release-versioning-policy.md`).
 3. Build all packages: `pnpm -r build`.
-4. Dry run: `pnpm publish -r --filter='./packages/{schema,common,repo-resolver}' --dry-run --access public --no-git-checks`.
-5. Publish: `pnpm publish -r --filter='./packages/{schema,common,repo-resolver}' --access public`.
-   Packages with `private: true` are automatically skipped by pnpm.
-6. Tag the release (`git tag vX.Y.Z && git push --tags`) and draft the GitHub Release from the `CHANGELOG.md` excerpt.
+4. Dry run: `pnpm publish -r --filter '@qmd-team-intent-kb/schema' --filter '@qmd-team-intent-kb/common' --filter '@qmd-team-intent-kb/repo-resolver' --dry-run --access public --no-git-checks`.
+5. Publish: `pnpm publish -r --filter '@qmd-team-intent-kb/schema' --filter '@qmd-team-intent-kb/common' --filter '@qmd-team-intent-kb/repo-resolver' --access public`.
+
+Per-package `--filter` flags avoid shell brace-expansion surprises that would occur with the quoted path-glob form `'./packages/{schema,common,repo-resolver}'`.
+Packages with `private: true` are automatically skipped by pnpm. 6. Tag the release (`git tag vX.Y.Z && git push --tags`) and draft the GitHub Release from the `CHANGELOG.md` excerpt.
 
 ## Guardrails
 
