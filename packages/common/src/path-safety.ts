@@ -16,18 +16,15 @@ export interface PathSafetyResult {
  * @param allowedRoots - Optional list of allowed absolute path prefixes
  */
 export function isPathSafe(path: string, allowedRoots?: string[]): PathSafetyResult {
-  // Null byte check
   if (path.includes('\0')) {
     return { safe: false, reason: 'Path contains null byte' };
   }
 
-  // Directory traversal check
   const segments = path.split(/[/\\]/);
   if (segments.includes('..')) {
     return { safe: false, reason: 'Path contains directory traversal (..)' };
   }
 
-  // Absolute path check
   const isAbsolute = path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(path);
 
   if (isAbsolute) {

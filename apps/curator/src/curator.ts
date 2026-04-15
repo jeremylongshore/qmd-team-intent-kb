@@ -49,10 +49,8 @@ export class Curator {
    * @returns A CurationResult describing the outcome.
    */
   processSingle(candidate: MemoryCandidate, existingHashes?: Set<string>): CurationResult {
-    // Step 1: Compute content hash
     const contentHash = computeContentHash(candidate.content);
 
-    // Step 2: Exact-hash duplicate check
     const dedup = checkDuplicate(candidate, this.deps.memoryRepo);
     if (dedup.isDuplicate) {
       return {
@@ -62,7 +60,6 @@ export class Curator {
       };
     }
 
-    // Intra-batch dedup: check if this hash was already promoted in the current batch
     if (existingHashes?.has(contentHash)) {
       return {
         candidateId: candidate.id,
@@ -71,12 +68,10 @@ export class Curator {
       };
     }
 
-    // Step 3: Load governance policy (first enabled policy for tenant)
     const policies = this.deps.policyRepo.findByTenant(this.config.tenantId);
     const policy = policies.find((p) => p.enabled);
 
     if (policy === undefined) {
-      // No enabled policy = auto-approve without evaluation
       return this.promoteCandidate(candidate, contentHash, {
         candidateId: candidate.id,
         outcome: 'approved',
@@ -84,7 +79,6 @@ export class Curator {
       });
     }
 
-    // Step 4: Run policy pipeline (uses pre-loaded hashes to avoid N+1)
     const pipeline = new PolicyPipeline(policy);
     const hashSet = existingHashes ?? new Set(this.deps.memoryRepo.getAllContentHashes());
     const pipelineResult = pipeline.evaluate(candidate, {
@@ -92,7 +86,6 @@ export class Curator {
       tenantId: this.config.tenantId,
     });
 
-    // Step 5: Rejected — record audit, return rejected outcome
     if (pipelineResult.outcome === 'rejected') {
       const reason = reject(candidate, pipelineResult, this.deps.auditRepo, this.config.dryRun);
       return {
@@ -103,7 +96,6 @@ export class Curator {
       };
     }
 
-    // Step 5b: Flagged — record audit, return flagged outcome (not promoted)
     if (pipelineResult.outcome === 'flagged') {
       const reason = reject(candidate, pipelineResult, this.deps.auditRepo, this.config.dryRun);
       return {
@@ -114,7 +106,6 @@ export class Curator {
       };
     }
 
-    // Step 6: Approved — detect supersession then promote
     return this.promoteCandidate(candidate, contentHash, pipelineResult);
   }
 
@@ -132,7 +123,6 @@ export class Curator {
     let flagged = 0;
     let duplicates = 0;
 
-    // Hoist hash loading out of the per-candidate loop
     const existingHashes = new Set(this.deps.memoryRepo.getAllContentHashes());
 
     for (const candidate of candidates) {
@@ -142,7 +132,6 @@ export class Curator {
       switch (result.outcome) {
         case 'promoted':
           promoted++;
-          // Update intra-batch hash set so subsequent candidates catch duplicates
           existingHashes.add(computeContentHash(candidate.content));
           break;
         case 'rejected':

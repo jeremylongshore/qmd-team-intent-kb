@@ -29,7 +29,6 @@ export async function ingestFromSpool(
     if (!readResult.ok) continue; // skip unreadable files, keep processing others
 
     for (const candidate of readResult.value) {
-      // Skip if already ingested (idempotency by candidate ID)
       const existing = candidateRepo.findById(candidate.id);
       if (existing !== null) continue;
 

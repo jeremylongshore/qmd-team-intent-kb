@@ -25,7 +25,6 @@ export class SearchService {
     const nowIso = new Date().toISOString();
     const queryLower = query.query.toLowerCase();
 
-    // Compute raw scores based on where the match occurred
     const rawHits = memories.map((memory) => {
       const titleMatch = memory.title.toLowerCase().includes(queryLower);
       const rawScore = titleMatch ? 0.9 : 0.6;
@@ -40,16 +39,13 @@ export class SearchService {
       };
     });
 
-    // Apply freshness reranking
     const reranked = rerankSearchHits(rawHits, nowIso);
 
-    // Paginate
     const page = query.pagination.page;
     const pageSize = query.pagination.pageSize;
     const start = (page - 1) * pageSize;
     const paginatedHits = reranked.slice(start, start + pageSize);
 
-    // Map to SearchHit shape (drop internal fields like updatedAt, finalScore)
     const hits: SearchHit[] = paginatedHits.map((hit) => ({
       memoryId: hit.memoryId,
       title: hit.title,
