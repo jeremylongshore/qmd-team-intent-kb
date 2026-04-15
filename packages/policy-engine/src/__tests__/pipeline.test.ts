@@ -9,7 +9,7 @@ import { makeCandidate, FIXED_NOW, DEFAULT_TENANT } from './fixtures.js';
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function makePolicy(rules: unknown[], overrides?: Record<string, unknown>) {
+function makePolicy(rules: Record<string, unknown>[], overrides?: Record<string, unknown>) {
   return GovernancePolicy.parse({
     id: randomUUID(),
     name: 'Test Policy',

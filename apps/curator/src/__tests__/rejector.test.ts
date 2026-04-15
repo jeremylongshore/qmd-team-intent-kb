@@ -84,7 +84,7 @@ describe('reject', () => {
     reject(candidate, pipelineResult, auditRepo);
 
     const events = auditRepo.findByTenant(TENANT);
-    const details = events[0]?.details as Record<string, unknown>;
+    const details = events[0]?.details;
     expect(details?.['candidateId']).toBe(candidate.id);
   });
 

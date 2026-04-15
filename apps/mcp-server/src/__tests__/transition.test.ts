@@ -35,7 +35,7 @@ function makeMemory(overrides?: Partial<CuratedMemory>): CuratedMemory {
     updatedAt: FIXED_NOW,
     version: 1,
     ...overrides,
-  } as CuratedMemory;
+  } satisfies CuratedMemory;
 }
 
 describe('applyTransition()', () => {

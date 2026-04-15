@@ -1,9 +1,16 @@
 import { scanForSecrets } from './secret-scanner.js';
 import { SECRET_PATTERNS, PII_PATTERNS } from './patterns.js';
+import type { Sensitivity } from '@qmd-team-intent-kb/schema';
 import type { SecretMatch } from '../types.js';
 
-/** Sensitivity levels ordered from most to least restrictive */
-export type SensitivityLevel = 'restricted' | 'confidential' | 'internal' | 'public';
+/**
+ * Sensitivity levels ordered from most to least restrictive.
+ * Alias for {@link Sensitivity} from `@qmd-team-intent-kb/schema` — the two
+ * types are structurally identical and consolidated here.
+ *
+ * @deprecated Use `Sensitivity` from `@qmd-team-intent-kb/schema` directly.
+ */
+export type SensitivityLevel = Sensitivity;
 
 /** Result of content classification */
 export interface ContentClassification {
@@ -52,7 +59,7 @@ export function classifyContent(content: string): ContentClassification {
     matchedPatterns.push('internal-path');
   }
 
-  let sensitivityLevel: SensitivityLevel = 'public';
+  let sensitivityLevel: Sensitivity = 'public';
 
   if (hasInternalPaths) {
     sensitivityLevel = 'internal';
