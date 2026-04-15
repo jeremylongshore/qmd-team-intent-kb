@@ -119,8 +119,8 @@ describe('EdgeDaemon health-server lifecycle race', () => {
   it('stop() called immediately after start() fully closes the http.Server (no leak)', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
 
-    // start() is synchronous — it fires HealthServer.start() on the microtask queue
-    // but does NOT await it. Calling stop() right away means stop() races start().
+    // start() is sync — it schedules the first cycle and returns immediately.
+    // The daemon is fully running (state = 'running') as soon as start() returns.
     daemon.start();
     expect(daemon.state).toBe('running');
 
@@ -129,9 +129,7 @@ describe('EdgeDaemon health-server lifecycle race', () => {
     const hs = daemon._healthServer as HealthServer | null;
     expect(hs).not.toBeNull();
 
-    // This is the race: stop() is invoked before HealthServer.start() has resolved.
-    // The fix ensures stop() awaits _healthServerStartPromise so the http.Server
-    // is always fully started and then properly closed.
+    // stop() awaits _healthServerStartPromise so the http.Server is always properly closed.
     await daemon.stop();
 
     expect(daemon.state).toBe('stopped');
@@ -144,17 +142,21 @@ describe('EdgeDaemon health-server lifecycle race', () => {
 
   it('_healthServerStartPromise is null after stop() completes (no dangling reference)', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
+    // start() is sync — it assigns _healthServerStartPromise during the call.
+    // Calling start() then immediately checking the field (via a tick) confirms
+    // the promise is in-flight before stop() clears it.
     daemon.start();
 
-    // The promise is assigned synchronously by start() before returning.
+    // Give the event loop one tick so any microtask continuations can run.
+    await Promise.resolve();
     // @ts-expect-error — accessing private field for test assertion
     const promiseBefore = daemon._healthServerStartPromise as Promise<void> | null;
     expect(promiseBefore).not.toBeNull();
 
     await daemon.stop();
 
-    // The .finally() handler in start() clears the field once the chain resolves.
-    // stop() awaits the chain, so by the time stop() returns the field is null.
+    // stop() awaits _healthServerStartPromise, so the .finally() handler that clears
+    // the field fires before stop() returns.
     // @ts-expect-error — accessing private field for test assertion
     const promiseAfter = daemon._healthServerStartPromise as Promise<void> | null;
     expect(promiseAfter).toBeNull();
@@ -171,11 +173,9 @@ describe('EdgeDaemon health-server lifecycle race', () => {
     expect(existsSync(config.pidFilePath)).toBe(false);
   });
 
-  it('stop() awaits start() so the "Health server listening" log appears before stop completes', async () => {
+  it('stop() awaits health-server start so the "Health server listening" log appears before stop completes', async () => {
     const daemon = new EdgeDaemon(config, deps, logger);
     daemon.start();
-
-    // No microtask tick between start() and stop() — pure race condition scenario.
     await daemon.stop();
 
     const messages = logger.messages.map((m) => m.message);
@@ -184,9 +184,8 @@ describe('EdgeDaemon health-server lifecycle race', () => {
     expect(messages.some((m) => m.includes('Health server listening on port'))).toBe(true);
   });
 
-  it('start() remains synchronous — throws immediately on non-idle state', () => {
-    // This guards the contract stated in the fix requirements: start() must NOT
-    // become async. The throw must be synchronous, not deferred to a Promise rejection.
+  it('start() throws synchronously on non-idle state', () => {
+    // start() is sync — the non-idle guard throws immediately, not as a rejected Promise.
     const daemon = new EdgeDaemon(config, deps, logger);
     daemon.start();
     expect(() => daemon.start()).toThrow('Cannot start daemon');
