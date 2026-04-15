@@ -25,6 +25,7 @@
 
 - `008-OD-RELS-release-versioning-policy.md` — Semantic versioning and changelog policy
 - `020-OD-RELS-v1-release-checklist.md` — v1 release checklist and gates
+- `029-OD-RELS-npm-publishing-strategy.md` — Which packages are publishable to npm and how
 
 ### DR — Documentation & Reference
 
@@ -88,5 +89,6 @@
 | 025 | AA-AACR | v0.3.0-release-report       | v0.3.0 release report          |
 | 026 | AT-DSGN | repo-resolver-design        | repo-resolver package design   |
 | 027 | OD-OPSM | edge-daemon-runbook         | edge-daemon operations runbook |
+| 029 | OD-RELS | npm-publishing-strategy     | npm publishing strategy        |
 
-## Next Available Sequence: 028
+## Next Available Sequence: 030
