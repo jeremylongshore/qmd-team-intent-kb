@@ -4,9 +4,11 @@ import { homedir } from 'node:os';
 import { ingestFromSpool, Curator } from '@qmd-team-intent-kb/curator';
 import { runExport } from '@qmd-team-intent-kb/git-exporter';
 import type { MemoryCandidate } from '@qmd-team-intent-kb/schema';
+import { resolveRepoContext } from '@qmd-team-intent-kb/repo-resolver';
 import type { DaemonConfig, DaemonDependencies, CycleResult, DaemonLogger } from './types.js';
 import { runStalenessSweep } from './staleness.js';
 import { writeFeedback } from './feedback.js';
+import { filterByRepoScope } from './repo-scope.js';
 
 /**
  * Check if enterprise managed settings disable memory capture.
@@ -59,19 +61,59 @@ export async function runCycle(
     return result;
   }
 
+  // Resolve repo context once per cycle for scopeByRepo filtering.
+  // On resolver error, degrade gracefully: log a warning and disable scoping for this cycle.
+  let resolvedRemoteUrl: string | null = null;
+  if (config.scopeByRepo) {
+    try {
+      const repoResult = await resolveRepoContext(process.cwd());
+      if (repoResult.ok) {
+        resolvedRemoteUrl = repoResult.value.remoteUrl;
+        if (!resolvedRemoteUrl) {
+          logger.warn(
+            '[repo-scope] Resolver returned no remoteUrl — repo-scope filter disabled for this cycle',
+          );
+        }
+      } else {
+        logger.warn(
+          `[repo-scope] Resolver failed (${repoResult.error.kind}) — repo-scope filter disabled for this cycle`,
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.warn(
+        `[repo-scope] Resolver threw unexpectedly: ${msg} — repo-scope filter disabled for this cycle`,
+      );
+    }
+  }
+
   // Step 1: Ingest from spool
   let ingestedCandidates: MemoryCandidate[] = [];
   try {
     const ingestResult = await ingestFromSpool(deps.candidateRepo, config.spoolDir);
     if (ingestResult.ok) {
       // Threat #2: Cap candidates per cycle
-      ingestedCandidates = ingestResult.value.slice(0, config.maxCandidatesPerCycle);
-      result.ingest.ingested = ingestedCandidates.length;
+      const capped = ingestResult.value.slice(0, config.maxCandidatesPerCycle);
       if (ingestResult.value.length > config.maxCandidatesPerCycle) {
         const msg = `Capped ingestion: ${ingestResult.value.length} found, processing ${config.maxCandidatesPerCycle}`;
         result.ingest.errors.push(msg);
         logger.warn(msg);
       }
+
+      // Apply repo-scope filter when flag is on and resolver succeeded with a remoteUrl
+      if (config.scopeByRepo && resolvedRemoteUrl) {
+        const scopeResult = filterByRepoScope(capped, resolvedRemoteUrl, logger);
+        ingestedCandidates = scopeResult.kept;
+        if (scopeResult.skipped > 0) {
+          logger.warn(
+            `[repo-scope] Skipped ${scopeResult.skipped} candidate(s) from mismatched repos`,
+          );
+        }
+      } else {
+        ingestedCandidates = capped;
+      }
+
+      result.ingest.ingested = ingestedCandidates.length;
     } else {
       result.ingest.errors.push(ingestResult.error);
       logger.error(`Ingest failed: ${ingestResult.error}`);

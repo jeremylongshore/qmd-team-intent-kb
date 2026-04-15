@@ -13,6 +13,7 @@ const DEFAULTS = {
   exportOutputDir: 'kb-export/',
   exportTargetId: 'kb-export-default',
   supersessionThreshold: 0.6,
+  scopeByRepo: false,
 } as const;
 
 /**
@@ -32,6 +33,7 @@ const DEFAULTS = {
  *   DAEMON_EXPORT_TARGET   — export target identifier
  *   DAEMON_SUPERSESSION_THRESHOLD — Jaccard threshold (default 0.6)
  *   DAEMON_PID_FILE        — PID file path
+ *   DAEMON_SCOPE_BY_REPO   — 'true'/'false' (default false)
  */
 export function loadDaemonConfig(
   env: Record<string, string | undefined> = process.env,
@@ -67,6 +69,7 @@ export function loadDaemonConfig(
       env['DAEMON_SUPERSESSION_THRESHOLD'] ?? String(DEFAULTS.supersessionThreshold),
     ),
     pidFilePath: env['DAEMON_PID_FILE'] ?? resolveTeamKbPath('daemon.pid'),
+    scopeByRepo: parseBool(env['DAEMON_SCOPE_BY_REPO'], DEFAULTS.scopeByRepo),
   };
 }
 

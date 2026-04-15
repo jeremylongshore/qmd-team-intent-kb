@@ -27,7 +27,8 @@
     "@qmd-team-intent-kb/claude-runtime": "workspace:*",
     "@qmd-team-intent-kb/curator": "workspace:*",
     "@qmd-team-intent-kb/git-exporter": "workspace:*",
-    "@qmd-team-intent-kb/qmd-adapter": "workspace:*"
+    "@qmd-team-intent-kb/qmd-adapter": "workspace:*",
+    "@qmd-team-intent-kb/repo-resolver": "workspace:*"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0"

@@ -36,6 +36,8 @@ export interface DaemonConfig {
   supersessionThreshold: number;
   /** PID file path for locking. Default ~/.teamkb/daemon.pid. */
   pidFilePath: string;
+  /** When true, candidates whose repoUrl does not match the daemon's resolved repo are skipped. Default false. */
+  scopeByRepo: boolean;
   /** Injectable clock for deterministic tests. */
   nowFn?: () => string;
 }

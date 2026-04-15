@@ -95,6 +95,9 @@ importers:
       '@qmd-team-intent-kb/qmd-adapter':
         specifier: workspace:*
         version: link:../../packages/qmd-adapter
+      '@qmd-team-intent-kb/repo-resolver':
+        specifier: workspace:*
+        version: link:../../packages/repo-resolver
       '@qmd-team-intent-kb/schema':
         specifier: workspace:*
         version: link:../../packages/schema
