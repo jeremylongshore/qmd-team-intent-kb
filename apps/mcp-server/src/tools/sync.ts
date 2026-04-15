@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 
 /** Result returned after running qmd embed */
-export interface SyncResult {
+interface SyncResult {
   stdout: string;
   stderr: string;
   message: string;
