@@ -17,5 +17,8 @@
     "test": "vitest run",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@qmd-team-intent-kb/common": "workspace:*"
   }
 }
