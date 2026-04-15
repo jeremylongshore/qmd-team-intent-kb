@@ -39,7 +39,7 @@ describe('filterByRepoScope', () => {
     expect(warns[0]?.message).toContain('repo-scope');
   });
 
-  it('keeps candidates that have no repoUrl (pre-tagging passthrough)', () => {
+  it('keeps candidates that have no repoUrl (pre-tagging passthrough) and counts them as unscoped', () => {
     const noUrl = makeCandidate({ metadata: { filePaths: [], tags: [] } });
     const logger = new RecordingLogger();
 
@@ -47,6 +47,11 @@ describe('filterByRepoScope', () => {
 
     expect(result.kept).toHaveLength(1);
     expect(result.skipped).toBe(0);
+    expect(result.unscoped).toBe(1);
+    // Operator-visible info log when anything bypasses scoping.
+    const infos = logger.messages.filter((m) => m.level === 'info');
+    expect(infos).toHaveLength(1);
+    expect(infos[0]?.message).toContain('bypassed scoping');
   });
 
   it('normalizes trailing .git before comparing', () => {
