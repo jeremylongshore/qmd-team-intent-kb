@@ -35,8 +35,7 @@ export class ExportStateRepository {
       SELECT * FROM export_state WHERE target_id = ?
     `);
 
-    // Use INSERT OR REPLACE (a.k.a. UPSERT) to create-or-update in one statement.
-    // updated_at is written explicitly so tests can control the timestamp.
+    // updated_at is set by the database (datetime('now')) to avoid app/DB clock drift.
     this.stmtUpsert = db.prepare(`
       INSERT INTO export_state (target_id, last_exported_at, updated_at)
       VALUES (@target_id, @last_exported_at, datetime('now'))

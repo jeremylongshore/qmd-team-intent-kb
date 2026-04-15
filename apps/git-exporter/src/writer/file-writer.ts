@@ -12,7 +12,6 @@ import { dirname, resolve } from 'node:path';
  * @throws Error if the path is unsafe
  */
 function assertPathSafe(filePath: string, allowedRoot?: string): void {
-  // Always reject null bytes and traversal segments
   if (filePath.includes('\0')) {
     throw new Error('Unsafe file path: Path contains null byte');
   }
@@ -21,7 +20,6 @@ function assertPathSafe(filePath: string, allowedRoot?: string): void {
     throw new Error('Unsafe file path: Path contains directory traversal (..)');
   }
 
-  // When an allowed root is given, verify the resolved path stays inside it
   if (allowedRoot !== undefined) {
     const resolved = resolve(filePath);
     const resolvedRoot = resolve(allowedRoot);

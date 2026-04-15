@@ -43,7 +43,6 @@ export function registerApiKeyAuth(app: FastifyInstance, apiKey: string | undefi
   }
 
   app.addHook('onRequest', async (request, reply) => {
-    // Health endpoint is always exempt
     if (request.url === '/health' || request.url === '/health/') {
       return;
     }

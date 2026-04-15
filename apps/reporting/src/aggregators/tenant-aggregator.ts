@@ -17,7 +17,6 @@ export function aggregateTenants(
   const memoryCountsByTenant = memoryRepo.countByTenant();
   const candidateCountsByTenant = candidateRepo.countByTenant();
 
-  // Discover all tenant IDs from both sources
   const tenantIds = new Set<string>([
     ...Object.keys(memoryCountsByTenant),
     ...Object.keys(candidateCountsByTenant),
@@ -33,7 +32,6 @@ export function aggregateTenants(
     summaries.push({ tenantId, memoryCount, candidateCount, auditActions });
   }
 
-  // Sort by tenant ID for deterministic output
   summaries.sort((a, b) => a.tenantId.localeCompare(b.tenantId));
 
   return summaries;

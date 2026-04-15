@@ -1,4 +1,3 @@
-// Enums
 export {
   MemorySource,
   TrustLevel,
@@ -14,7 +13,6 @@ export {
   AuthorType,
 } from './enums.js';
 
-// Common primitives
 export {
   Uuid,
   Sha256Hash,
@@ -27,7 +25,6 @@ export {
   ContentMetadata,
 } from './common.js';
 
-// Domain schemas
 export { PrePolicyFlags, MemoryCandidate } from './memory-candidate.js';
 export { PolicyEvaluation, SupersessionLink, CuratedMemory } from './curated-memory.js';
 export type { ActiveMemory, SupersededMemory } from './curated-memory.js';
@@ -35,7 +32,6 @@ export { PolicyRule, GovernancePolicy } from './governance-policy.js';
 export { Pagination, SearchQuery, SearchHit, SearchResult } from './search.js';
 export { AuditEvent } from './audit-event.js';
 
-// Lifecycle
 export {
   TransitionRequest,
   ALLOWED_TRANSITIONS,

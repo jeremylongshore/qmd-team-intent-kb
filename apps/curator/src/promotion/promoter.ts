@@ -41,9 +41,7 @@ export function promote(
   const now = new Date().toISOString();
   const memoryId = randomUUID();
 
-  // Convert pipeline rule evaluations to PolicyEvaluation schema format.
-  // The pipeline does not carry a per-evaluation policyId, so we generate one
-  // for each evaluation record.
+  // The pipeline does not carry a per-evaluation policyId, so one is generated per record.
   const policyEvaluations: PolicyEvaluation[] = input.pipelineResult.evaluations.map((ev) => ({
     policyId: randomUUID(),
     ruleId: ev.ruleId,
@@ -52,7 +50,6 @@ export function promote(
     evaluatedAt: now,
   }));
 
-  // Build the new curated memory — active lifecycle, no supersession link on self
   const memory = CuratedMemorySchema.parse({
     id: memoryId,
     candidateId: input.candidate.id,
@@ -75,7 +72,6 @@ export function promote(
   });
 
   if (!dryRun) {
-    // Handle supersession: update the old memory to 'superseded' lifecycle with link
     if (input.supersession !== undefined) {
       const oldMemory = memoryRepo.findById(input.supersession.supersededMemoryId);
       if (oldMemory !== null) {
@@ -92,7 +88,6 @@ export function promote(
         memoryRepo.update(updatedOld);
       }
 
-      // Audit: the old memory was superseded
       auditRepo.insert(
         AuditEventSchema.parse({
           id: randomUUID(),
@@ -110,10 +105,8 @@ export function promote(
       );
     }
 
-    // Persist the new memory
     memoryRepo.insert(memory);
 
-    // Audit: the candidate was promoted
     auditRepo.insert(
       AuditEventSchema.parse({
         id: randomUUID(),
