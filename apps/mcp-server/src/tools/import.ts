@@ -55,13 +55,8 @@ export async function importFiles(
   const base = input.basePath ?? process.cwd();
   const pattern = join(base, input.glob);
 
-  let matchedFiles: string[];
-  try {
-    // Use fast-glob which works in Node 20+ (node:fs/promises glob requires Node 22)
-    matchedFiles = await fg(pattern, { onlyFiles: true, absolute: true });
-  } catch {
-    matchedFiles = [];
-  }
+  // Use fast-glob which works in Node 20+ (node:fs/promises glob requires Node 22)
+  const matchedFiles = await fg(pattern, { onlyFiles: true, absolute: true });
 
   const outcomes: FileImportOutcome[] = [];
   let queued = 0;

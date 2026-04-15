@@ -1,8 +1,15 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createDatabase, MemoryRepository } from '@qmd-team-intent-kb/store';
-import type { FeedbackEntry } from '@qmd-team-intent-kb/edge-daemon';
 import type { McpServerConfig } from '../config.js';
+
+/** Feedback entry written by edge-daemon for rejected/flagged candidates */
+export interface FeedbackEntry {
+  candidateId: string;
+  outcome: string;
+  reason: string;
+  timestamp: string;
+}
 
 /** Database-derived counts */
 interface MemoryCounts {
