@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@qmd-team-intent-kb/common": "workspace:*"
+    "@qmd-team-intent-kb/common": "workspace:*",
+    "zod": "^3.23.0"
   }
 }

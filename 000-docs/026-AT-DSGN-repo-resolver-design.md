@@ -33,33 +33,38 @@ Out of scope:
 
 ### `RepoContext`
 
+Defined as a Zod schema with the TypeScript type derived via `z.infer<>`, matching the project convention from `packages/schema` (every domain type is Zod-defined so schema and TS types cannot drift, and runtime validation is available if the type ever crosses a boundary).
+
 ```ts
-export interface RepoContext {
-  repoRoot: string; // absolute path to the .git parent
-  repoName: string; // basename(repoRoot), lowercased
-  remoteUrl: string | null; // origin remote URL, or null if unset
-  branch: string | null; // current branch, or null when detached
-  commitSha: string; // HEAD commit SHA (40-char hex)
-  isMonorepo: boolean; // true if a workspace manifest was detected
-  workspaceRoot: string | null; // monorepo root (may equal repoRoot)
-  workspacePackage: string | null; // package name containing cwd, or null
-}
+export const RepoContext = z.object({
+  repoRoot: z.string().min(1), // absolute path to the .git parent
+  repoName: z.string().min(1), // basename(repoRoot), lowercased
+  remoteUrl: z.string().nullable(), // origin remote URL, or null if unset
+  branch: z.string().nullable(), // current branch, or null when detached
+  commitSha: z.string().regex(/^[0-9a-f]{40}$/), // HEAD commit SHA
+  isMonorepo: z.boolean(),
+  workspaceRoot: z.string().nullable(), // monorepo root (may equal repoRoot)
+  workspacePackage: z.string().nullable(), // package name containing cwd
+});
+export type RepoContext = z.infer<typeof RepoContext>;
 ```
 
-Fields that can legitimately be absent are typed as nullable. Consumers must handle `null` without crashing. `commitSha` is non-nullable because a resolved working tree always has a HEAD — the no-commits edge case is treated as an unresolvable repo and surfaces as an error, not a partial context.
+Fields that can legitimately be absent are nullable. Consumers must handle `null` without crashing. `commitSha` is non-nullable because a resolved working tree always has a HEAD — the no-commits edge case is treated as an unresolvable repo and surfaces as an error, not a partial context.
 
 ### `ResolverError`
 
 ```ts
-export type ResolverError =
-  | { kind: 'NotAGitRepo'; cwd: string }
-  | { kind: 'BareRepo'; repoRoot: string }
-  | { kind: 'NoCommits'; repoRoot: string }
-  | { kind: 'GitUnavailable'; cause: string }
-  | { kind: 'Io'; path: string; cause: string };
+export const ResolverError = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('NotAGitRepo'), cwd: z.string() }),
+  z.object({ kind: z.literal('BareRepo'), repoRoot: z.string() }),
+  z.object({ kind: z.literal('NoCommits'), repoRoot: z.string() }),
+  z.object({ kind: z.literal('GitUnavailable'), cause: z.string() }),
+  z.object({ kind: z.literal('Io'), path: z.string(), cause: z.string() }),
+]);
+export type ResolverError = z.infer<typeof ResolverError>;
 ```
 
-All errors are typed discriminated unions. The resolver returns `Result<RepoContext, ResolverError>` using the existing `Result<T, E>` type in `packages/common`. No exceptions cross the package boundary.
+All errors are discriminated by `kind`. The resolver returns `Result<RepoContext, ResolverError>` using the existing `Result<T, E>` type in `packages/common`. No exceptions cross the package boundary.
 
 ## Resolution Procedure
 

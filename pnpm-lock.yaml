@@ -203,6 +203,9 @@ importers:
       '@qmd-team-intent-kb/common':
         specifier: workspace:*
         version: link:../common
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
 
   packages/schema:
     dependencies:
