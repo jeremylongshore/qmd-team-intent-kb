@@ -4,7 +4,7 @@ import { writeToSpool } from '@qmd-team-intent-kb/claude-runtime';
 import type { McpServerConfig } from '../config.js';
 
 /** Input for teamkb_propose */
-export interface ProposeInput {
+interface ProposeInput {
   title: string;
   content: string;
   category?: MemoryCategory;
@@ -12,7 +12,7 @@ export interface ProposeInput {
 }
 
 /** Result shape returned to the MCP caller */
-export interface ProposeResult {
+interface ProposeResult {
   candidateId: string;
   message: string;
 }

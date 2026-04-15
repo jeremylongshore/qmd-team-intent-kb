@@ -116,7 +116,7 @@ export class RecordingLogger implements DaemonLogger {
 }
 
 /** Serialise a candidate to a JSONL line */
-export function candidateToJsonl(candidate: MemoryCandidate): string {
+function candidateToJsonl(candidate: MemoryCandidate): string {
   return JSON.stringify(candidate);
 }
 

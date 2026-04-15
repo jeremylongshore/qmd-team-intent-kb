@@ -5,7 +5,7 @@ import type { FeedbackEntry } from '@qmd-team-intent-kb/edge-daemon';
 import type { McpServerConfig } from '../config.js';
 
 /** Database-derived counts */
-export interface MemoryCounts {
+interface MemoryCounts {
   byLifecycle: Record<string, number>;
   byCategory: Record<string, number>;
   byTenant: Record<string, number>;
@@ -13,7 +13,7 @@ export interface MemoryCounts {
 }
 
 /** Aggregate status response */
-export interface StatusResult {
+interface StatusResult {
   counts: MemoryCounts;
   recentFeedback: FeedbackEntry[];
   dbPath: string;

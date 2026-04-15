@@ -2,7 +2,7 @@ import type { MemoryCandidate } from '@qmd-team-intent-kb/schema';
 import type { DaemonLogger } from './types.js';
 
 /** Result of a repo-scope filter pass */
-export interface RepoScopeResult {
+interface RepoScopeResult {
   kept: MemoryCandidate[];
   skipped: number;
 }

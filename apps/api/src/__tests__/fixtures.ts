@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { computeContentHash } from '@qmd-team-intent-kb/common';
-import type { CuratedMemory, GovernancePolicy, MemoryCandidate } from '@qmd-team-intent-kb/schema';
+import type { CuratedMemory } from '@qmd-team-intent-kb/schema';
 
 export const NOW = '2026-01-15T10:00:00.000Z';
-export const HASH_A = 'a'.repeat(64);
 
 /**
  * Build a valid MemoryCandidate request body.
@@ -92,6 +91,3 @@ export function makeTransitionBody(overrides?: Record<string, unknown>): Record<
     ...overrides,
   };
 }
-
-// Re-export for use in tests that need a typed GovernancePolicy
-export type { GovernancePolicy, MemoryCandidate };

@@ -5,7 +5,7 @@ import { createDatabase, MemoryRepository, AuditRepository } from '@qmd-team-int
 import type { McpServerConfig } from '../config.js';
 
 /** Input for teamkb_transition */
-export interface TransitionInput {
+interface TransitionInput {
   memoryId: string;
   to: MemoryLifecycleState;
   reason: string;
@@ -13,7 +13,7 @@ export interface TransitionInput {
 }
 
 /** Result returned after a successful transition */
-export interface TransitionResult {
+interface TransitionResult {
   memoryId: string;
   from: string;
   to: string;
