@@ -21,6 +21,8 @@
 - [ ] SECURITY.md current and accurate
 - [ ] No secrets in tracked files (CI secret scan passing)
 - [ ] Dependency audit clean at `high` severity (`pnpm audit --audit-level=high`)
+- [ ] Verify published container signature with `cosign verify` (see `028-OD-SECU-release-signing.md`)
+- [ ] Verify SLSA provenance with `slsa-verifier verify-image` against the release tag
 
 ### Version
 
