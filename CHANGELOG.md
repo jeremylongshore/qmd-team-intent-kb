@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `apps/api`: generated OpenAPI 3.1 spec served at `GET /openapi.json` and Swagger UI at `GET /docs`, powered by `@fastify/swagger` + `@fastify/swagger-ui`. Routes declare minimal schema metadata (tags, summary, description) for navigable documentation. The spec and docs UI are exempt from API key authentication so they stay publicly reachable. (bead `qmd-team-intent-kb-fwp`)
 - npm publishing configuration for reusable library packages (`@qmd-team-intent-kb/schema`, `@qmd-team-intent-kb/common`, `@qmd-team-intent-kb/repo-resolver`) — `publishConfig.access = public`, `files` allowlist, and minimal package READMEs. Internal-only packages (`store`, `qmd-adapter`, `claude-runtime`, `test-fixtures`, `policy-engine`) remain `private: true`. Strategy documented in `000-docs/029-OD-RELS-npm-publishing-strategy.md`.
 
 ## [0.3.0] - 2026-03-19

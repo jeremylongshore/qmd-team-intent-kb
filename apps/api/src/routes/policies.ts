@@ -12,67 +12,113 @@ import type { PolicyService } from '../services/policy-service.js';
  * DELETE /api/policies/:id        — delete (204 | 404)
  */
 export function registerPolicyRoutes(app: FastifyInstance, service: PolicyService): void {
-  app.post('/api/policies', async (request, reply) => {
-    try {
-      const policy = service.create(request.body);
-      return reply.status(201).send(policy);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        return reply.status(err.statusCode).send({ error: err.message });
+  app.post(
+    '/api/policies',
+    {
+      schema: {
+        tags: ['policies'],
+        summary: 'Create a governance policy',
+      },
+    },
+    async (request, reply) => {
+      try {
+        const policy = service.create(request.body);
+        return reply.status(201).send(policy);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          return reply.status(err.statusCode).send({ error: err.message });
+        }
+        throw err;
       }
-      throw err;
-    }
-  });
+    },
+  );
 
-  app.get('/api/policies', async (request, reply) => {
-    try {
-      const { tenantId } = request.query as { tenantId?: string };
-      const policies = service.list(tenantId);
-      return reply.send(policies);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        return reply.status(err.statusCode).send({ error: err.message });
+  app.get(
+    '/api/policies',
+    {
+      schema: {
+        tags: ['policies'],
+        summary: 'List policies for a tenant',
+        description: 'Requires `tenantId` query param.',
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { tenantId } = request.query as { tenantId?: string };
+        const policies = service.list(tenantId);
+        return reply.send(policies);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          return reply.status(err.statusCode).send({ error: err.message });
+        }
+        throw err;
       }
-      throw err;
-    }
-  });
+    },
+  );
 
-  app.get('/api/policies/:id', async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const policy = service.getById(id);
-      return reply.send(policy);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        return reply.status(err.statusCode).send({ error: err.message });
+  app.get(
+    '/api/policies/:id',
+    {
+      schema: {
+        tags: ['policies'],
+        summary: 'Retrieve a policy by UUID',
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const policy = service.getById(id);
+        return reply.send(policy);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          return reply.status(err.statusCode).send({ error: err.message });
+        }
+        throw err;
       }
-      throw err;
-    }
-  });
+    },
+  );
 
-  app.put('/api/policies/:id', async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const policy = service.update(id, request.body);
-      return reply.send(policy);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        return reply.status(err.statusCode).send({ error: err.message });
+  app.put(
+    '/api/policies/:id',
+    {
+      schema: {
+        tags: ['policies'],
+        summary: 'Replace an existing policy',
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const policy = service.update(id, request.body);
+        return reply.send(policy);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          return reply.status(err.statusCode).send({ error: err.message });
+        }
+        throw err;
       }
-      throw err;
-    }
-  });
+    },
+  );
 
-  app.delete('/api/policies/:id', async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      service.delete(id);
-      return reply.status(204).send();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        return reply.status(err.statusCode).send({ error: err.message });
+  app.delete(
+    '/api/policies/:id',
+    {
+      schema: {
+        tags: ['policies'],
+        summary: 'Delete a policy',
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        service.delete(id);
+        return reply.status(204).send();
+      } catch (err) {
+        if (err instanceof ApiError) {
+          return reply.status(err.statusCode).send({ error: err.message });
+        }
+        throw err;
       }
-      throw err;
-    }
-  });
+    },
+  );
 }
