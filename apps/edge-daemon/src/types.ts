@@ -36,6 +36,8 @@ export interface DaemonConfig {
   supersessionThreshold: number;
   /** PID file path for locking. Default ~/.teamkb/daemon.pid. */
   pidFilePath: string;
+  /** When true, candidates whose repoUrl does not match the daemon's resolved repo are skipped. Default false. */
+  scopeByRepo: boolean;
   /** HTTP health server port. 0 = disabled. Default 0. */
   healthPort?: number;
   /** Maximum retry attempts for transient step errors. Default 3. */

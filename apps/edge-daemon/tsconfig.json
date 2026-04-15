@@ -15,6 +15,7 @@
     { "path": "../../packages/policy-engine" },
     { "path": "../../packages/claude-runtime" },
     { "path": "../../packages/qmd-adapter" },
+    { "path": "../../packages/repo-resolver" },
     { "path": "../curator" },
     { "path": "../git-exporter" }
   ]

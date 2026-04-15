@@ -90,6 +90,7 @@ export function makeConfig(overrides?: Partial<DaemonConfig>): DaemonConfig {
     exportTargetId: 'kb-export-default',
     supersessionThreshold: 0.6,
     pidFilePath: '/tmp/daemon-test-' + randomUUID() + '.pid',
+    scopeByRepo: false,
     maxRetries: 0, // no retries in tests by default — avoids delay
     retryBaseDelayMs: 0,
     retryMaxJitterMs: 0,

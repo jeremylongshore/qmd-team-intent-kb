@@ -28,6 +28,7 @@
     "@qmd-team-intent-kb/curator": "workspace:*",
     "@qmd-team-intent-kb/git-exporter": "workspace:*",
     "@qmd-team-intent-kb/qmd-adapter": "workspace:*",
+    "@qmd-team-intent-kb/repo-resolver": "workspace:*",
     "pino": "^9.0.0"
   },
   "devDependencies": {

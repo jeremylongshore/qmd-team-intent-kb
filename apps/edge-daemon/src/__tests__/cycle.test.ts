@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -19,6 +19,8 @@ import {
   TENANT,
   NOW,
 } from './fixtures.js';
+
+vi.mock('@qmd-team-intent-kb/repo-resolver');
 
 describe('runCycle', () => {
   let db: Database.Database;
@@ -367,6 +369,111 @@ describe('runCycle', () => {
     const result = await runCycle(exportConfig, deps, logger);
     // Export should have run regardless of curation outcome
     expect(result.export).not.toBeNull();
+  });
+
+  describe('scopeByRepo flag', () => {
+    const DAEMON_REMOTE = 'https://github.com/org/daemon-repo';
+    const FOREIGN_REMOTE = 'https://github.com/org/other-repo';
+
+    const makeRepoResult = (remoteUrl: string | null) => ({
+      ok: true as const,
+      value: {
+        repoRoot: '/home/user/daemon-repo',
+        repoName: 'daemon-repo',
+        remoteUrl,
+        branch: 'main',
+        commitSha: 'a'.repeat(40),
+        isMonorepo: false,
+        workspaceRoot: null,
+        workspacePackage: null,
+      },
+    });
+
+    beforeEach(async () => {
+      const { resolveRepoContext } = await import('@qmd-team-intent-kb/repo-resolver');
+      vi.mocked(resolveRepoContext).mockResolvedValue(makeRepoResult(DAEMON_REMOTE));
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('flag off — all candidates pass through regardless of repoUrl', async () => {
+      const candidateWithForeignUrl = makeCandidate({
+        content: 'Scope flag off: this candidate should pass through even with a foreign repoUrl.',
+        metadata: { filePaths: [], tags: [], repoUrl: FOREIGN_REMOTE },
+      });
+      await writeSpoolFile(spoolDir, 'spool-001.jsonl', [candidateWithForeignUrl]);
+
+      const scopeOffConfig = makeConfig({ spoolDir, scopeByRepo: false });
+
+      const result = await runCycle(scopeOffConfig, deps, logger);
+      expect(result.ingest.ingested).toBe(1);
+      const warnMsgs = logger.messages.filter(
+        (m) => m.level === 'warn' && m.message.includes('repo-scope'),
+      );
+      expect(warnMsgs).toHaveLength(0);
+    });
+
+    it('flag on, all candidates match — no candidates skipped', async () => {
+      const candidate = makeCandidate({
+        content: 'Candidate from matching repo should be kept by repo-scope filter.',
+        metadata: { filePaths: [], tags: [], repoUrl: DAEMON_REMOTE },
+      });
+      await writeSpoolFile(spoolDir, 'spool-001.jsonl', [candidate]);
+
+      const scopeOnConfig = makeConfig({ spoolDir, scopeByRepo: true });
+
+      const result = await runCycle(scopeOnConfig, deps, logger);
+      expect(result.ingest.ingested).toBe(1);
+    });
+
+    it('flag on, mismatched repoUrl — candidate skipped and warning logged', async () => {
+      const foreignCandidate = makeCandidate({
+        content: 'This candidate is from a different repo and should be skipped by scope filter.',
+        metadata: { filePaths: [], tags: [], repoUrl: FOREIGN_REMOTE },
+      });
+      const matchingCandidate = makeCandidate({
+        content: 'This candidate matches the daemon repo and should be kept.',
+        metadata: { filePaths: [], tags: [], repoUrl: DAEMON_REMOTE },
+      });
+      await writeSpoolFile(spoolDir, 'spool-001.jsonl', [foreignCandidate, matchingCandidate]);
+
+      const scopeOnConfig = makeConfig({ spoolDir, scopeByRepo: true });
+
+      const result = await runCycle(scopeOnConfig, deps, logger);
+      expect(result.ingest.ingested).toBe(1);
+
+      const warnMsgs = logger.messages.filter(
+        (m) => m.level === 'warn' && m.message.includes('repo-scope'),
+      );
+      expect(warnMsgs.length).toBeGreaterThan(0);
+    });
+
+    it('flag on, resolver errors — scoping disabled, all candidates pass through', async () => {
+      const { resolveRepoContext } = await import('@qmd-team-intent-kb/repo-resolver');
+      vi.mocked(resolveRepoContext).mockResolvedValue({
+        ok: false,
+        error: { kind: 'NotAGitRepo', cwd: '/tmp/nowhere' },
+      });
+
+      const candidate = makeCandidate({
+        content: 'Candidate should pass when resolver fails and scoping degrades gracefully.',
+        metadata: { filePaths: [], tags: [], repoUrl: FOREIGN_REMOTE },
+      });
+      await writeSpoolFile(spoolDir, 'spool-001.jsonl', [candidate]);
+
+      const scopeOnConfig = makeConfig({ spoolDir, scopeByRepo: true });
+
+      const result = await runCycle(scopeOnConfig, deps, logger);
+      expect(result.ingest.ingested).toBe(1);
+
+      const warnMsgs = logger.messages.filter(
+        (m) => m.level === 'warn' && m.message.includes('repo-scope'),
+      );
+      expect(warnMsgs.length).toBeGreaterThan(0);
+      expect(warnMsgs[0]?.message).toContain('disabled for this cycle');
+    });
   });
 
   it('index update retries transient qmd errors and succeeds on final attempt', async () => {
