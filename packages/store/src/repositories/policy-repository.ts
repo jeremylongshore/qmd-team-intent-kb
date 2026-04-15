@@ -1,29 +1,66 @@
+import { z } from 'zod';
 import type Database from 'better-sqlite3';
-import type { GovernancePolicy } from '@qmd-team-intent-kb/schema';
+import { GovernancePolicy } from '@qmd-team-intent-kb/schema';
 
-/** Raw SQLite row shape for the governance_policies table */
-interface PolicyRow {
-  id: string;
-  name: string;
-  tenant_id: string;
-  rules_json: string;
-  enabled: number;
-  version: number;
-  created_at: string;
-  updated_at: string;
-}
+/**
+ * Zod schema for the raw SQLite row returned by better-sqlite3.
+ * Validates the flat DB representation before domain parsing.
+ */
+const PolicyRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  tenant_id: z.string(),
+  rules_json: z.string(),
+  enabled: z.number(),
+  version: z.number(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
 
-function rowToPolicy(row: PolicyRow): GovernancePolicy {
-  return {
-    id: row.id,
-    name: row.name,
-    tenantId: row.tenant_id,
-    rules: JSON.parse(row.rules_json) as GovernancePolicy['rules'],
-    enabled: row.enabled !== 0,
-    version: row.version,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
+/**
+ * Parse a raw SQLite row into a validated GovernancePolicy domain object.
+ * Throws a descriptive error if the row fails validation.
+ *
+ * @param row - unknown value from better-sqlite3 .get()/.all()
+ * @returns validated GovernancePolicy
+ * @throws Error with row id and Zod issue details if parsing fails
+ */
+function rowToPolicy(row: unknown): GovernancePolicy {
+  const flatResult = PolicyRowSchema.safeParse(row);
+  if (!flatResult.success) {
+    const issues = flatResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(`governance_policies row failed flat validation: ${issues.join('; ')}`);
+  }
+  const flat = flatResult.data;
+
+  let rules: unknown;
+  try {
+    rules = JSON.parse(flat.rules_json);
+  } catch (e) {
+    throw new Error(
+      `governance_policies row id=${flat.id}: rules_json is not valid JSON: ${String(e)}`,
+    );
+  }
+
+  const domainResult = GovernancePolicy.safeParse({
+    id: flat.id,
+    name: flat.name,
+    tenantId: flat.tenant_id,
+    rules,
+    enabled: flat.enabled !== 0,
+    version: flat.version,
+    createdAt: flat.created_at,
+    updatedAt: flat.updated_at,
+  });
+
+  if (!domainResult.success) {
+    const issues = domainResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(
+      `governance_policies row id=${flat.id} failed domain validation: ${issues.join('; ')}`,
+    );
+  }
+
+  return domainResult.data;
 }
 
 /**
@@ -86,13 +123,13 @@ export class PolicyRepository {
 
   /** Find a policy by its primary key, or return null if not found. */
   findById(id: string): GovernancePolicy | null {
-    const row = this.stmtFindById.get(id) as PolicyRow | undefined;
+    const row = this.stmtFindById.get(id);
     return row !== undefined ? rowToPolicy(row) : null;
   }
 
   /** Return all policies belonging to the given tenant. */
   findByTenant(tenantId: string): GovernancePolicy[] {
-    const rows = this.stmtFindByTenant.all(tenantId) as PolicyRow[];
+    const rows = this.stmtFindByTenant.all(tenantId);
     return rows.map(rowToPolicy);
   }
 

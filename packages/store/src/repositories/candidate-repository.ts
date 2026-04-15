@@ -1,39 +1,87 @@
+import { z } from 'zod';
 import type Database from 'better-sqlite3';
-import type { MemoryCandidate } from '@qmd-team-intent-kb/schema';
+import { MemoryCandidate } from '@qmd-team-intent-kb/schema';
 
-/** Raw SQLite row shape for the candidates table */
-interface CandidateRow {
-  id: string;
-  status: string;
-  source: string;
-  content: string;
-  title: string;
-  category: string;
-  trust_level: string;
-  author_json: string;
-  tenant_id: string;
-  metadata_json: string;
-  pre_policy_flags_json: string;
-  content_hash: string;
-  captured_at: string;
-  created_at: string;
-}
+/**
+ * Zod schema for the raw SQLite row returned by better-sqlite3.
+ * Validates the flat DB representation before domain parsing.
+ */
+const CandidateRowSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  source: z.string(),
+  content: z.string(),
+  title: z.string(),
+  category: z.string(),
+  trust_level: z.string(),
+  author_json: z.string(),
+  tenant_id: z.string(),
+  metadata_json: z.string(),
+  pre_policy_flags_json: z.string(),
+  content_hash: z.string(),
+  captured_at: z.string(),
+  created_at: z.string(),
+});
 
-function rowToCandidate(row: CandidateRow): MemoryCandidate {
-  return {
-    id: row.id,
-    status: row.status as MemoryCandidate['status'],
-    source: row.source as MemoryCandidate['source'],
-    content: row.content,
-    title: row.title,
-    category: row.category as MemoryCandidate['category'],
-    trustLevel: row.trust_level as MemoryCandidate['trustLevel'],
-    author: JSON.parse(row.author_json) as MemoryCandidate['author'],
-    tenantId: row.tenant_id,
-    metadata: JSON.parse(row.metadata_json) as MemoryCandidate['metadata'],
-    prePolicyFlags: JSON.parse(row.pre_policy_flags_json) as MemoryCandidate['prePolicyFlags'],
-    capturedAt: row.captured_at,
-  };
+/**
+ * Parse a raw SQLite row into a validated MemoryCandidate domain object.
+ * Throws a descriptive error if the row fails validation.
+ *
+ * @param row - unknown value from better-sqlite3 .get()/.all()
+ * @returns validated MemoryCandidate
+ * @throws Error with row id and Zod issue details if parsing fails
+ */
+function rowToCandidate(row: unknown): MemoryCandidate {
+  const flatResult = CandidateRowSchema.safeParse(row);
+  if (!flatResult.success) {
+    const issues = flatResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(`candidates row failed flat validation: ${issues.join('; ')}`);
+  }
+  const flat = flatResult.data;
+
+  let author: unknown;
+  let metadata: unknown;
+  let prePolicyFlags: unknown;
+
+  try {
+    author = JSON.parse(flat.author_json);
+  } catch (e) {
+    throw new Error(`candidates row id=${flat.id}: author_json is not valid JSON: ${String(e)}`);
+  }
+  try {
+    metadata = JSON.parse(flat.metadata_json);
+  } catch (e) {
+    throw new Error(`candidates row id=${flat.id}: metadata_json is not valid JSON: ${String(e)}`);
+  }
+  try {
+    prePolicyFlags = JSON.parse(flat.pre_policy_flags_json);
+  } catch (e) {
+    throw new Error(
+      `candidates row id=${flat.id}: pre_policy_flags_json is not valid JSON: ${String(e)}`,
+    );
+  }
+
+  const domainResult = MemoryCandidate.safeParse({
+    id: flat.id,
+    status: flat.status,
+    source: flat.source,
+    content: flat.content,
+    title: flat.title,
+    category: flat.category,
+    trustLevel: flat.trust_level,
+    author,
+    tenantId: flat.tenant_id,
+    metadata,
+    prePolicyFlags,
+    capturedAt: flat.captured_at,
+  });
+
+  if (!domainResult.success) {
+    const issues = domainResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(`candidates row id=${flat.id} failed domain validation: ${issues.join('; ')}`);
+  }
+
+  return domainResult.data;
 }
 
 /**
@@ -104,13 +152,13 @@ export class CandidateRepository {
 
   /** Find a candidate by its primary key, or return null if not found. */
   findById(id: string): MemoryCandidate | null {
-    const row = this.stmtFindById.get(id) as CandidateRow | undefined;
+    const row = this.stmtFindById.get(id);
     return row !== undefined ? rowToCandidate(row) : null;
   }
 
   /** Return all candidates belonging to the given tenant. */
   findByTenant(tenantId: string): MemoryCandidate[] {
-    const rows = this.stmtFindByTenant.all(tenantId) as CandidateRow[];
+    const rows = this.stmtFindByTenant.all(tenantId);
     return rows.map(rowToCandidate);
   }
 
@@ -119,7 +167,7 @@ export class CandidateRepository {
    * Useful for duplicate detection before insertion.
    */
   findByContentHash(hash: string): MemoryCandidate | null {
-    const row = this.stmtFindByHash.get(hash) as CandidateRow | undefined;
+    const row = this.stmtFindByHash.get(hash);
     return row !== undefined ? rowToCandidate(row) : null;
   }
 

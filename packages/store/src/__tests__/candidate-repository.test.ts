@@ -6,6 +6,8 @@ import { createTestDatabase } from '../database.js';
 import { CandidateRepository } from '../repositories/candidate-repository.js';
 import { makeCandidate } from './fixtures.js';
 
+const NOW = '2026-01-15T10:00:00.000Z';
+
 describe('CandidateRepository', () => {
   let db: Database.Database;
   let repo: CandidateRepository;
@@ -144,5 +146,58 @@ describe('CandidateRepository — aggregation queries', () => {
     });
     repo.insert(c2, h2);
     expect(repo.countByTenant()['team-alpha']).toBe(2);
+  });
+});
+
+describe('CandidateRepository — Zod-on-read malformed row rejection', () => {
+  let db: Database.Database;
+  let repo: CandidateRepository;
+
+  beforeEach(() => {
+    db = createTestDatabase();
+    repo = new CandidateRepository(db);
+  });
+
+  it('throws a descriptive error when author_json contains invalid JSON', () => {
+    // Insert a row with malformed author_json directly via raw SQL to simulate DB corruption
+    const id = randomUUID();
+    db.prepare(
+      `
+      INSERT INTO candidates (
+        id, status, source, content, title, category,
+        trust_level, author_json, tenant_id,
+        metadata_json, pre_policy_flags_json, content_hash, captured_at
+      ) VALUES (
+        ?, 'inbox', 'claude_session', 'Some content', 'Some title', 'convention',
+        'medium', 'NOT_VALID_JSON', 'team-alpha',
+        '{}', '{}', ?, ?
+      )
+    `,
+    ).run(id, 'a'.repeat(64), NOW);
+
+    expect(() => repo.findById(id)).toThrowError(
+      /candidates row id=.+: author_json is not valid JSON/,
+    );
+  });
+
+  it('throws a descriptive error when status contains an invalid enum value', () => {
+    // Insert a row with an invalid status value to simulate DB schema drift or manual edit
+    const id = randomUUID();
+    const validAuthor = JSON.stringify({ type: 'ai', id: 'session-1', name: 'Claude' });
+    db.prepare(
+      `
+      INSERT INTO candidates (
+        id, status, source, content, title, category,
+        trust_level, author_json, tenant_id,
+        metadata_json, pre_policy_flags_json, content_hash, captured_at
+      ) VALUES (
+        ?, 'INVALID_STATUS_VALUE', 'claude_session', 'Some content', 'Some title', 'convention',
+        'medium', ?, 'team-alpha',
+        '{}', '{}', ?, ?
+      )
+    `,
+    ).run(id, validAuthor, 'b'.repeat(64), NOW);
+
+    expect(() => repo.findById(id)).toThrowError(/candidates row id=.+ failed domain validation/);
   });
 });
