@@ -101,10 +101,8 @@ function parseNonNegativeInt(value: string | undefined, fallback: number): numbe
 }
 
 function parseNonEmptyString(value: string | undefined, fallback: string): string {
-  if (value === undefined) return fallback;
-  const trimmed = value.trim();
-  if (trimmed.length === 0) return fallback;
-  return trimmed;
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : fallback;
 }
 
 function parseBool(value: string | undefined, fallback: boolean): boolean {
