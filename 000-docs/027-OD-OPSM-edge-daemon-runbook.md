@@ -172,10 +172,10 @@ subcommand and a PID lock file. Pick the check that fits your environment.
 Set `DAEMON_HEALTH_PORT` to a non-zero port to enable the embedded HTTP
 server. Default is `0` (disabled).
 
-| Route             | Running                  | Stopping                    | No cycle yet                   |
-| ----------------- | ------------------------ | --------------------------- | ------------------------------ |
-| `GET /healthz`    | `200 {"status":"ok"}`    | `503 {"status":"stopping"}` | `200 {"status":"ok"}`          |
-| `GET /last-cycle` | `200 <CycleResult JSON>` | `200 <CycleResult JSON>`    | `404 {"error":"no cycle yet"}` |
+| Route             | Running                    | Stopping                      | No cycle yet                     |
+| ----------------- | -------------------------- | ----------------------------- | -------------------------------- |
+| `GET /healthz`    | `200` `{"status":"ok"}`    | `503` `{"status":"stopping"}` | `200` `{"status":"ok"}`          |
+| `GET /last-cycle` | `200` `<CycleResult JSON>` | `200` `<CycleResult JSON>`    | `404` `{"error":"no cycle yet"}` |
 
 ```sh
 # Enable on install
