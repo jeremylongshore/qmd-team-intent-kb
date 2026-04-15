@@ -164,11 +164,33 @@ value falls back to the default.
 
 ## Health Check
 
-The edge-daemon does not expose an HTTP health endpoint; it is a single-process
-local daemon. Use the PID lock file and `status` subcommand to determine whether
-it is running.
+The edge-daemon exposes an optional HTTP health endpoint plus a CLI status
+subcommand and a PID lock file. Pick the check that fits your environment.
 
-### Quick status check
+### HTTP endpoint (Kubernetes / Docker / load-balancer probes)
+
+Set `DAEMON_HEALTH_PORT` to a non-zero port to enable the embedded HTTP
+server. Default is `0` (disabled).
+
+| Route             | Running                  | Stopping                    | No cycle yet                   |
+| ----------------- | ------------------------ | --------------------------- | ------------------------------ |
+| `GET /healthz`    | `200 {"status":"ok"}`    | `503 {"status":"stopping"}` | `200 {"status":"ok"}`          |
+| `GET /last-cycle` | `200 <CycleResult JSON>` | `200 <CycleResult JSON>`    | `404 {"error":"no cycle yet"}` |
+
+```sh
+# Enable on install
+echo "DAEMON_HEALTH_PORT=9100" >> /etc/edge-daemon.env
+
+# Liveness probe
+curl -fsS http://127.0.0.1:9100/healthz
+```
+
+Unknown routes return `404 {"error":"not found"}`. The server binds
+`127.0.0.1` by default — inside Docker/Kubernetes you'll need to either
+port-forward via `docker run -p` or make the bind host configurable (see
+follow-up work in bead `qmd-team-intent-kb-dwe`).
+
+### Quick status check (any environment)
 
 ```sh
 # Returns JSON: {"status":"running","pid":12345} or {"status":"stopped"}
