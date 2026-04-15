@@ -27,9 +27,11 @@
     "@qmd-team-intent-kb/claude-runtime": "workspace:*",
     "@qmd-team-intent-kb/curator": "workspace:*",
     "@qmd-team-intent-kb/git-exporter": "workspace:*",
-    "@qmd-team-intent-kb/qmd-adapter": "workspace:*"
+    "@qmd-team-intent-kb/qmd-adapter": "workspace:*",
+    "pino": "^9.0.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.0"
+    "@types/better-sqlite3": "^7.6.0",
+    "pino-pretty": "^13.0.0"
   }
 }
