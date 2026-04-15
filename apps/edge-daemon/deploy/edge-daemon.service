@@ -31,7 +31,7 @@ Environment=APP_DIR=/opt/qmd-team-intent-kb
 
 # Override spool + PID paths so they resolve under /var/lib/edge-daemon.
 # ProtectHome=true (below) blocks the daemon from writing to the user's home,
-# which is the default for DAEMON_SPOOL_DIR and DAEMON_PID_FILE. Setting them
+# which is the default for DAEMON_SPOOL_DIR, DAEMON_EXPORT_DIR, and DAEMON_PID_FILE. Setting them
 # here ensures the unit works out-of-the-box without requiring the operator
 # to know about this interaction.
 Environment=DAEMON_SPOOL_DIR=/var/lib/edge-daemon/spool
