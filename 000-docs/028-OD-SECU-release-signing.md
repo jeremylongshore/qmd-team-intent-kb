@@ -16,10 +16,10 @@ systemd/launchd deploy artifacts shipped alongside the container.
 
 ## What Gets Signed
 
-| Artifact                                                             | Signing Mechanism           | Transparency Log |
-| -------------------------------------------------------------------- | --------------------------- | ---------------- |
-| `ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon:${TAG}`      | cosign keyless (OIDC)       | Rekor            |
-| Same image — SLSA Level 3 provenance attestation                     | slsa-github-generator v2    | Rekor            |
+| Artifact                                                        | Signing Mechanism        | Transparency Log |
+| --------------------------------------------------------------- | ------------------------ | ---------------- |
+| `ghcr.io/jeremylongshore/qmd-team-intent-kb-edge-daemon:${TAG}` | cosign keyless (OIDC)    | Rekor            |
+| Same image — SLSA Level 3 provenance attestation                | slsa-github-generator v2 | Rekor            |
 
 The image is tagged with both `${TAG}` (e.g. `v0.4.0`) and `latest` on
 every tag push. Both tags reference the same digest, and the signature
