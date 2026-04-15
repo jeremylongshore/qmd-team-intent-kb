@@ -198,7 +198,11 @@ importers:
         specifier: workspace:*
         version: link:../schema
 
-  packages/repo-resolver: {}
+  packages/repo-resolver:
+    dependencies:
+      '@qmd-team-intent-kb/common':
+        specifier: workspace:*
+        version: link:../common
 
   packages/schema:
     dependencies:

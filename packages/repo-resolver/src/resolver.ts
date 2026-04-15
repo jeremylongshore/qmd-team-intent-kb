@@ -1,0 +1,95 @@
+import { realpath } from 'node:fs/promises';
+import { basename } from 'node:path';
+import { ok, err, type Result } from '@qmd-team-intent-kb/common';
+import type { RepoContext, ResolverError } from './types.js';
+import { runGit } from './git.js';
+
+/**
+ * Resolve the git repo context enclosing `cwd`.
+ *
+ * The core resolver handles plain, detached, bare, no-commit, and no-remote
+ * cases. Monorepo detection and workspace-package identification are added
+ * in a later pass (bead mbd.3) and default to non-monorepo until then.
+ *
+ * See 000-docs/026-AT-DSGN-repo-resolver-design.md for the full design.
+ */
+export async function resolveRepoContext(cwd: string): Promise<Result<RepoContext, ResolverError>> {
+  let canonicalCwd: string;
+  try {
+    canonicalCwd = await realpath(cwd);
+  } catch (e) {
+    return err<ResolverError>({
+      kind: 'Io',
+      path: cwd,
+      cause: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  // Single consolidated git call — the hot path for warm caches in later beads.
+  const probe = await runGit(canonicalCwd, [
+    'rev-parse',
+    '--show-toplevel',
+    '--is-bare-repository',
+    'HEAD',
+  ]);
+
+  if (probe.exitCode === -1) {
+    return err<ResolverError>({ kind: 'GitUnavailable', cause: probe.stderr });
+  }
+
+  if (probe.exitCode !== 0) {
+    const stderr = probe.stderr.toLowerCase();
+    if (stderr.includes('not a git repository')) {
+      return err<ResolverError>({ kind: 'NotAGitRepo', cwd: canonicalCwd });
+    }
+    // `--show-toplevel` fails inside a bare repo because there's no working tree.
+    if (stderr.includes('must be run in a work tree') || stderr.includes('bare repository')) {
+      const gitDir = await runGit(canonicalCwd, ['rev-parse', '--absolute-git-dir']);
+      const repoRoot = gitDir.exitCode === 0 ? gitDir.stdout.trim() : canonicalCwd;
+      return err<ResolverError>({ kind: 'BareRepo', repoRoot });
+    }
+    // `git rev-parse HEAD` fails with "unknown revision" when no commits exist.
+    if (stderr.includes('unknown revision') || stderr.includes('bad revision')) {
+      const top = await runGit(canonicalCwd, ['rev-parse', '--show-toplevel']);
+      const repoRoot = top.exitCode === 0 ? top.stdout.trim() : canonicalCwd;
+      return err<ResolverError>({ kind: 'NoCommits', repoRoot });
+    }
+    return err<ResolverError>({ kind: 'GitUnavailable', cause: probe.stderr });
+  }
+
+  const lines = probe.stdout.split('\n').filter((l) => l.length > 0);
+  if (lines.length < 3) {
+    return err<ResolverError>({
+      kind: 'GitUnavailable',
+      cause: `Unexpected git rev-parse output: ${probe.stdout}`,
+    });
+  }
+  const [rawRepoRoot, isBareStr, commitSha] = lines as [string, string, string];
+
+  if (isBareStr.trim() === 'true') {
+    return err<ResolverError>({ kind: 'BareRepo', repoRoot: rawRepoRoot });
+  }
+
+  const repoRoot = rawRepoRoot;
+
+  const [remoteResult, branchResult] = await Promise.all([
+    runGit(repoRoot, ['config', '--get', 'remote.origin.url']),
+    runGit(repoRoot, ['symbolic-ref', '--short', 'HEAD']),
+  ]);
+
+  const remoteUrl = remoteResult.exitCode === 0 ? remoteResult.stdout.trim() || null : null;
+  const branch = branchResult.exitCode === 0 ? branchResult.stdout.trim() || null : null;
+
+  const context: RepoContext = {
+    repoRoot,
+    repoName: basename(repoRoot).toLowerCase(),
+    remoteUrl,
+    branch,
+    commitSha,
+    isMonorepo: false,
+    workspaceRoot: null,
+    workspacePackage: null,
+  };
+
+  return ok(context);
+}
