@@ -28,5 +28,6 @@ export async function injectJson(
   payload?: Record<string, unknown>,
 ): Promise<InjectResult> {
   const res = await app.inject({ method, url, payload });
-  return { status: res.statusCode, body: res.json() };
+  const body = res.body.length > 0 ? res.json() : null;
+  return { status: res.statusCode, body };
 }
