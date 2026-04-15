@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { MemoryCandidate, CuratedMemory, GovernancePolicy } from '@qmd-team-intent-kb/schema';
 import { computeContentHash } from '@qmd-team-intent-kb/common';
 
-export const NOW = '2026-01-15T10:00:00.000Z';
+const NOW = '2026-01-15T10:00:00.000Z';
 export const TENANT = 'team-alpha';
 
 /** Build a valid MemoryCandidate, merging optional overrides */

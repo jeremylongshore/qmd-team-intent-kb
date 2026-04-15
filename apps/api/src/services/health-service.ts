@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3';
 
 /** Payload returned by the health endpoint. */
-export interface HealthStatus {
+interface HealthStatus {
   status: 'healthy' | 'degraded';
   uptime: number;
   dbConnected: boolean;

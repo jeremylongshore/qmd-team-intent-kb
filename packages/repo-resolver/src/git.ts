@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 
-export interface GitInvocation {
+interface GitInvocation {
   stdout: string;
   stderr: string;
   exitCode: number;

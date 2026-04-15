@@ -8,13 +8,13 @@ import { categorizeFromPath } from '../categorize.js';
 import type { McpServerConfig } from '../config.js';
 
 /** Input for teamkb_import */
-export interface ImportInput {
+interface ImportInput {
   glob: string;
   basePath?: string;
 }
 
 /** Per-file import outcome */
-export interface FileImportOutcome {
+interface FileImportOutcome {
   file: string;
   candidateId: string;
   ok: boolean;
@@ -22,7 +22,7 @@ export interface FileImportOutcome {
 }
 
 /** Aggregate result for teamkb_import */
-export interface ImportResult {
+interface ImportResult {
   queued: number;
   failed: number;
   outcomes: FileImportOutcome[];
