@@ -1,4 +1,4 @@
-export type { RepoContext, ResolverError } from './types.js';
+export { RepoContext, ResolverError } from './types.js';
 export { resolveRepoContext, type ResolveOptions } from './resolver.js';
 export {
   RepoContextCache,
@@ -7,5 +7,7 @@ export {
   setCacheTtl,
   setDefaultCache,
 } from './cache.js';
+export { deriveTenantId, normalizeRemoteUrl } from './tenant.js';
+export type { TenantOverrides } from './tenant.js';
 
 export const name = '@qmd-team-intent-kb/repo-resolver';
