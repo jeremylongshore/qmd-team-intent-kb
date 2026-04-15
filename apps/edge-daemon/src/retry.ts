@@ -32,7 +32,6 @@ interface RetryOptions {
   maxRetries: number;
   baseDelayMs: number;
   maxJitterMs: number;
-  nowFn?: () => string;
   sleepFn?: (ms: number) => Promise<void>;
 }
 
