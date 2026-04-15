@@ -4,7 +4,7 @@ import { createDatabase, MemoryRepository } from '@qmd-team-intent-kb/store';
 import type { McpServerConfig } from '../config.js';
 
 /** Feedback entry written by edge-daemon for rejected/flagged candidates */
-export interface FeedbackEntry {
+interface FeedbackEntry {
   candidateId: string;
   outcome: string;
   reason: string;
