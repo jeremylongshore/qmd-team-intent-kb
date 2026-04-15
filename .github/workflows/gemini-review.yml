@@ -1,67 +1,48 @@
-name: 'Gemini PR Review'
+# Gemini AI Code Review
+#
+# Template for all wild-* repos.
+# Requires these GitHub repo variables (set via scripts/gcp-setup.sh):
+#   WIF_PROVIDER, WIF_SERVICE_ACCOUNT, GCP_PROJECT_ID,
+#   GOOGLE_CLOUD_LOCATION, GOOGLE_GENAI_USE_VERTEXAI
+#
+# Copy this file to .github/workflows/gemini-review.yml in each wild-* repo.
+
+name: Gemini Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
     branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
   pull-requests: write
-  id-token: write
-
-concurrency:
-  group: 'gemini-review-${{ github.event.pull_request.number }}'
-  cancel-in-progress: true
+  id-token: write # Required for WIF
 
 jobs:
-  review:
+  gemini-review:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
     steps:
-      - uses: actions/checkout@v6
-
-      - name: 'Gemini PR Review'
-        uses: 'google-github-actions/run-gemini-cli@v0'
-        env:
-          GITHUB_TOKEN: '${{ github.token }}'
-          ISSUE_TITLE: '${{ github.event.pull_request.title }}'
-          ISSUE_BODY: '${{ github.event.pull_request.body }}'
-          PULL_REQUEST_NUMBER: '${{ github.event.pull_request.number }}'
-          REPOSITORY: '${{ github.repository }}'
+      - uses: actions/checkout@v4
         with:
-          gcp_workload_identity_provider: '${{ vars.WIF_PROVIDER }}'
-          gcp_service_account: '${{ vars.WIF_SERVICE_ACCOUNT }}'
-          gcp_project_id: '${{ vars.GCP_PROJECT_ID }}'
-          gcp_location: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
-          use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
-          gemini_model: 'gemini-2.5-pro'
-          workflow_name: 'gemini-review'
-          prompt: '/gemini-review'
-          settings: |-
+          fetch-depth: 0
+
+      - uses: google-github-actions/run-gemini-cli@v0
+        with:
+          gcp_workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          gcp_service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          gcp_project_id: ${{ vars.GCP_PROJECT_ID }}
+          gcp_location: ${{ vars.GOOGLE_CLOUD_LOCATION }}
+          use_vertex_ai: ${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}
+          gemini_model: gemini-2.5-pro
+          settings: |
             {
-              "model": {
-                "maxSessionTurns": 25
-              },
-              "mcpServers": {
-                "github": {
-                  "command": "docker",
-                  "args": [
-                    "run", "-i", "--rm",
-                    "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
-                    "ghcr.io/github/github-mcp-server:v0.27.0"
-                  ],
-                  "includeTools": [
-                    "add_comment_to_pending_review",
-                    "pull_request_read",
-                    "pull_request_review_write"
-                  ],
-                  "env": {
-                    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-                  }
-                }
-              },
               "tools": {
+                "includeTools": [
+                  "add_comment_to_pending_review",
+                  "pull_request_read",
+                  "pull_request_review_write"
+                ],
                 "core": [
                   "run_shell_command(cat)",
                   "run_shell_command(echo)",
