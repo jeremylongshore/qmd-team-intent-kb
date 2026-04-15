@@ -52,6 +52,23 @@
 | npm publish setup                 | No publish target exists yet                                    | Low      |
 | Schema migration tooling          | Manual migrations acceptable at 0.x                             | Medium   |
 
+## Scale-up Triggers (When to Add Shared Infrastructure)
+
+The platform is intentionally process-local. In-memory caches, single-process rate limiting, file-based spool, and per-process resolver cache are all deliberate v0.x choices. Each has a documented trigger that warrants upgrading to shared infrastructure — **add the work as a bead only after you observe the trigger in the wild, not pre-emptively.**
+
+| Trigger (observed signal) | Component to upgrade | Likely option |
+| ------------------------- | -------------------- | ------------- |
+| API tier deployed to >1 replica AND per-tenant rate quotas are needed | `apps/api/middleware/rate-limiter` | Shared store (Redis, Memcached, or libsql/sqlite over network) |
+| Multiple processes/machines need warm `RepoContext` cache | `packages/repo-resolver/cache.ts` | Shared cache OR drop the cache entirely if cold-start latency is acceptable |
+| Curator polling latency hurts UX (candidates must promote in <1s) | spool intake → curator | Replace file spool with event stream (NATS, Redis Streams, or DB notify) |
+| Multiple curator processes contend for the same spool | curator + spool | File locking → message broker with at-least-once delivery |
+| Schema changes need coordinated rollout across many machines | `packages/store` migrations | Versioned migration tool with CI gate (instead of manual migrations) |
+| Search latency from qmd cold-cache exceeds SLO | `qmd-adapter` + index sync | Pre-warmed index distribution OR shared read replica |
+
+**Rule of thumb**: every row above adds operational surface area (a process to run, a network to monitor, a version skew to manage, a backup story). The cost of premature adoption almost always exceeds the cost of adding it later when there's a real number to point at.
+
+When a trigger fires, file a bead under a new "Scale" epic with the observed metric (request rate, replica count, latency percentile) in the description so the priority is grounded in evidence, not speculation.
+
 ## Release Posture Assessment
 
 **Honest assessment: This is a credible 0.1.0 prerelease.**
