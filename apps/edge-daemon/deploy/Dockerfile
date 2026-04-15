@@ -83,6 +83,15 @@ ENV DAEMON_STALE_DAYS=90
 ENV DAEMON_SPOOL_DIR=/var/lib/edge-daemon/spool
 ENV DAEMON_EXPORT_DIR=/var/lib/edge-daemon/kb-export
 ENV DAEMON_PID_FILE=/var/lib/edge-daemon/daemon.pid
+# Inside a container the health server must bind to 0.0.0.0 so external
+# liveness/readiness probes can reach it.  The default outside Docker is
+# 127.0.0.1 (loopback-only).  Override at runtime if you need a different
+# interface (e.g. a specific non-loopback IP).
+ENV DAEMON_HEALTH_HOST=0.0.0.0
+# Operators should also set DAEMON_HEALTH_PORT to a non-zero value to enable
+# the HTTP health endpoint.  Default (0) leaves it disabled.
+# EXPOSE documents the conventional port; set DAEMON_HEALTH_PORT to match.
+EXPOSE 9100
 
 RUN mkdir -p /var/lib/edge-daemon/spool /var/lib/edge-daemon/kb-export \
     && chown -R edge-daemon:edge-daemon /var/lib/edge-daemon

@@ -3,6 +3,8 @@ import type { CycleResult, DaemonState } from './types.js';
 
 export interface HealthServerOptions {
   port: number;
+  /** Host/address to bind to. Default '127.0.0.1'. Pass '0.0.0.0' inside Docker/Kubernetes. */
+  host?: string;
   getState: () => DaemonState;
   getLastCycleResult: () => CycleResult | null;
 }
@@ -53,7 +55,7 @@ export class HealthServer {
 
       server.once('error', reject);
 
-      server.listen(this._options.port, '127.0.0.1', () => {
+      server.listen(this._options.port, this._options.host ?? '127.0.0.1', () => {
         const addr = server.address();
         this._assignedPort =
           typeof addr === 'object' && addr !== null ? addr.port : this._options.port;

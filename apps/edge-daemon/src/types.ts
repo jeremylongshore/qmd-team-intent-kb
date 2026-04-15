@@ -40,6 +40,8 @@ export interface DaemonConfig {
   scopeByRepo: boolean;
   /** HTTP health server port. 0 = disabled. Default 0. */
   healthPort?: number;
+  /** Host/address the HTTP health server binds to. Default '127.0.0.1'. Use '0.0.0.0' inside Docker/Kubernetes so external probes can reach it. */
+  healthHost: string;
   /** Maximum retry attempts for transient step errors. Default 3. */
   maxRetries: number;
   /** Base delay in ms for exponential backoff. Default 500. */
