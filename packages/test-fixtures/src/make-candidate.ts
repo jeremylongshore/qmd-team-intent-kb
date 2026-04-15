@@ -34,8 +34,6 @@ export function makeCandidateWithHash(overrides?: Record<string, unknown>): {
   candidate: MemoryCandidate;
   contentHash: string;
 } {
-  const content =
-    typeof overrides?.['content'] === 'string' ? overrides['content'] : DEFAULT_CONTENT;
   const candidate = makeCandidate(overrides);
-  return { candidate, contentHash: computeContentHash(content) };
+  return { candidate, contentHash: computeContentHash(candidate.content) };
 }
