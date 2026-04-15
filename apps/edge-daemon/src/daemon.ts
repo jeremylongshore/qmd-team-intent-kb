@@ -26,6 +26,7 @@ export class EdgeDaemon {
   private _stopResolve: (() => void) | null = null;
   private readonly _signalHandlers: Array<{ signal: NodeJS.Signals; handler: () => void }> = [];
   private _healthServer: HealthServer | null = null;
+  private _healthServerStartPromise: Promise<void> | null = null;
 
   constructor(
     private readonly config: DaemonConfig,
@@ -66,12 +67,15 @@ export class EdgeDaemon {
         getState: () => this._state,
         getLastCycleResult: () => this._lastCycleResult,
       });
-      this._healthServer
+      this._healthServerStartPromise = this._healthServer
         .start()
         .then(() => this.logger.info(`Health server listening on port ${this._healthServer!.port}`))
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : String(err);
           this.logger.error(`Health server failed to start: ${msg}`);
+        })
+        .finally(() => {
+          this._healthServerStartPromise = null;
         });
     }
 
@@ -112,6 +116,12 @@ export class EdgeDaemon {
     this.removeSignalHandlers();
 
     if (this._healthServer !== null) {
+      // Await any in-flight start() before stopping — prevents the race where stop()
+      // calls _healthServer.stop() while _server is still null (start() not yet resolved),
+      // which would cause stop() to return early and leave the http.Server running forever.
+      if (this._healthServerStartPromise !== null) {
+        await this._healthServerStartPromise;
+      }
       await this._healthServer.stop();
       this._healthServer = null;
     }
