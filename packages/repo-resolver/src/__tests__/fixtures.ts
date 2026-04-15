@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
@@ -72,4 +72,20 @@ export function makeRepoDetached(): Fixture {
 /** Directory that is not a git repo at all. */
 export function makeNonGitDir(): Fixture {
   return makeTmp('repo-resolver-nongit-');
+}
+
+/**
+ * Plain git repo whose root is also a pnpm workspace, with a single inner
+ * workspace package at packages/inner with name `@scope/inner`.
+ */
+export function makeRepoWithPnpmWorkspace(): Fixture & { innerDir: string } {
+  const fx = makeTmp('repo-resolver-pnpm-');
+  exec(fx.dir, 'git init -q -b main');
+  exec(fx.dir, 'git commit -q --allow-empty -m init');
+  writeFileSync(join(fx.dir, 'pnpm-workspace.yaml'), 'packages:\n  - "packages/*"\n');
+  writeFileSync(join(fx.dir, 'package.json'), JSON.stringify({ name: 'root' }));
+  const innerDir = join(fx.dir, 'packages', 'inner');
+  mkdirSync(innerDir, { recursive: true });
+  writeFileSync(join(innerDir, 'package.json'), JSON.stringify({ name: '@scope/inner' }));
+  return { ...fx, innerDir };
 }

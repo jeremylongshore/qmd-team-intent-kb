@@ -7,6 +7,8 @@ export {
   setCacheTtl,
   setDefaultCache,
 } from './cache.js';
+export { detectMonorepo } from './monorepo.js';
+export type { MonorepoInfo } from './monorepo.js';
 export { deriveTenantId, normalizeRemoteUrl } from './tenant.js';
 export type { TenantOverrides } from './tenant.js';
 
