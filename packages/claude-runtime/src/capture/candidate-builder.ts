@@ -35,7 +35,7 @@ export function buildCandidate(
     metadata: {
       filePaths: event.filePaths ?? [],
       language: event.language,
-      projectContext: event.projectContext,
+      projectContext: event.projectContext ?? gitContext?.repoName,
       sessionId: event.sessionId,
       repoUrl: gitContext?.repoUrl,
       branch: gitContext?.branch,

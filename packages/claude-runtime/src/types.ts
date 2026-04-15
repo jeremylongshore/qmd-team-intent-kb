@@ -19,6 +19,10 @@ export interface GitContext {
   branch: string;
   userName: string;
   tenantId: string;
+  /** Lowercased repo basename, populated when resolved via repo-resolver */
+  repoName?: string;
+  /** HEAD commit SHA (40-char hex), populated when resolved via repo-resolver */
+  commitSha?: string;
 }
 
 /** A named secret detection pattern */

@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@qmd-team-intent-kb/schema": "workspace:*",
-    "@qmd-team-intent-kb/common": "workspace:*"
+    "@qmd-team-intent-kb/common": "workspace:*",
+    "@qmd-team-intent-kb/repo-resolver": "workspace:*"
   }
 }
