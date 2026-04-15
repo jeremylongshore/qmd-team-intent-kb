@@ -1,41 +1,24 @@
 import { describe, it, expect } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { MemoryCandidate, GovernancePolicy } from '@qmd-team-intent-kb/schema';
+import { GovernancePolicy } from '@qmd-team-intent-kb/schema';
 import { computeContentHash } from '@qmd-team-intent-kb/common';
 import { PolicyPipeline } from '../pipeline.js';
+import { makeCandidate, FIXED_NOW, DEFAULT_TENANT } from './fixtures.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function makeCandidate(overrides?: Record<string, unknown>) {
-  return MemoryCandidate.parse({
-    id: randomUUID(),
-    status: 'inbox',
-    source: 'claude_session',
-    content: 'Use Result<T, E> for all fallible operations in the codebase',
-    title: 'Error handling convention',
-    category: 'convention',
-    trustLevel: 'medium',
-    author: { type: 'ai', id: 'claude-1' },
-    tenantId: 'team-alpha',
-    metadata: { filePaths: [], tags: [] },
-    prePolicyFlags: { potentialSecret: false, lowConfidence: false, duplicateSuspect: false },
-    capturedAt: '2026-01-15T10:00:00.000Z',
-    ...overrides,
-  });
-}
-
 function makePolicy(rules: Record<string, unknown>[], overrides?: Record<string, unknown>) {
   return GovernancePolicy.parse({
     id: randomUUID(),
     name: 'Test Policy',
-    tenantId: 'team-alpha',
+    tenantId: DEFAULT_TENANT,
     rules,
     enabled: true,
     version: 1,
-    createdAt: '2026-01-15T10:00:00.000Z',
-    updatedAt: '2026-01-15T10:00:00.000Z',
+    createdAt: FIXED_NOW,
+    updatedAt: FIXED_NOW,
     ...overrides,
   });
 }
