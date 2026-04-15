@@ -8,6 +8,7 @@ import {
   makeRepoDetached,
   makeRepoNoCommits,
   makeRepoNoRemote,
+  makeRepoWithPnpmWorkspace,
   makeRepoWithRemote,
   type Fixture,
 } from './fixtures.js';
@@ -15,7 +16,7 @@ import {
 describe('resolveRepoContext', () => {
   const fixtures: Fixture[] = [];
 
-  function track(fx: Fixture): Fixture {
+  function track<T extends Fixture>(fx: T): T {
     fixtures.push(fx);
     return fx;
   }
@@ -106,5 +107,26 @@ describe('resolveRepoContext', () => {
     if (!result.ok) return;
     // On macOS /tmp is a symlink; realpath must have resolved it.
     expect(result.value.repoRoot).toBe(realpathSync(fx.dir));
+  });
+
+  it('populates monorepo fields when cwd is inside a pnpm workspace package', async () => {
+    const fx = track(makeRepoWithPnpmWorkspace());
+    const result = await resolveRepoContext(fx.innerDir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.isMonorepo).toBe(true);
+    expect(result.value.workspaceRoot).toBe(realpathSync(fx.dir));
+    expect(result.value.workspacePackage).toBe('@scope/inner');
+  });
+
+  it('populates workspaceRoot but null workspacePackage when cwd is at repo root', async () => {
+    const fx = track(makeRepoWithPnpmWorkspace());
+    const result = await resolveRepoContext(fx.dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.isMonorepo).toBe(true);
+    expect(result.value.workspaceRoot).toBe(realpathSync(fx.dir));
+    // Root package.json has name='root' but cwd === workspaceRoot, so null.
+    expect(result.value.workspacePackage).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { ok, err, type Result } from '@qmd-team-intent-kb/common';
 import type { RepoContext, ResolverError } from './types.js';
 import { runGit } from './git.js';
 import { getDefaultCache, type RepoContextCache } from './cache.js';
+import { detectMonorepo } from './monorepo.js';
 
 export interface ResolveOptions {
   /**
@@ -107,15 +108,15 @@ export async function resolveRepoContext(
   const remoteUrl = remoteResult.exitCode === 0 ? remoteResult.stdout.trim() || null : null;
   const branch = branchResult.exitCode === 0 ? branchResult.stdout.trim() || null : null;
 
+  const monorepo = detectMonorepo(canonicalCwd, repoRoot);
+
   const context: RepoContext = {
     repoRoot,
     repoName: basename(repoRoot).toLowerCase(),
     remoteUrl,
     branch,
     commitSha,
-    isMonorepo: false,
-    workspaceRoot: null,
-    workspacePackage: null,
+    ...monorepo,
   };
 
   if (cache) {
