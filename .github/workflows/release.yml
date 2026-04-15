@@ -133,7 +133,6 @@ jobs:
 
       - name: Sign image (keyless, OIDC)
         env:
-          COSIGN_EXPERIMENTAL: '1'
           IMAGE: ${{ steps.image-ref.outputs.image }}
           DIGEST: ${{ steps.push.outputs.digest }}
         run: |
