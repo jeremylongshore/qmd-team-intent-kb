@@ -8,6 +8,8 @@ import type {
 import { acquireLock, releaseLock } from './lock.js';
 import { runCycle } from './cycle.js';
 import { HealthServer } from './health-server.js';
+import { resolveRepoContext } from '@qmd-team-intent-kb/repo-resolver';
+import type { RepoContext } from '@qmd-team-intent-kb/repo-resolver';
 
 /**
  * Edge Daemon — polls the spool directory, runs curation, and syncs the index.
@@ -27,6 +29,11 @@ export class EdgeDaemon {
   private readonly _signalHandlers: Array<{ signal: NodeJS.Signals; handler: () => void }> = [];
   private _healthServer: HealthServer | null = null;
   private _healthServerStartPromise: Promise<void> | null = null;
+  /**
+   * Repo context resolved once at startup. `undefined` until start() runs.
+   * `null` means resolution was attempted but failed (scoping disabled).
+   */
+  private _repoContext: RepoContext | null | undefined = undefined;
 
   constructor(
     private readonly config: DaemonConfig,
@@ -43,9 +50,47 @@ export class EdgeDaemon {
   }
 
   /**
-   * Start the daemon. Acquires PID lock and begins polling.
+   * Resolve repo context once before the polling loop starts.
    *
-   * @throws Error if the lock cannot be acquired (another instance running).
+   * Must be called before `start()` when `config.scopeByRepo` is true so that
+   * `_repoContext` is populated and cycles never need to spawn their own git subprocess.
+   *
+   * Calling `bootstrap()` when `scopeByRepo` is false is a safe no-op.
+   * Calling `bootstrap()` multiple times is idempotent — re-resolution only runs
+   * when `_repoContext` is still `undefined` (i.e. unresolved).
+   */
+  async bootstrap(): Promise<void> {
+    if (!this.config.scopeByRepo || this._repoContext !== undefined) return;
+
+    try {
+      const repoResult = await resolveRepoContext(process.cwd());
+      if (repoResult.ok) {
+        this._repoContext = repoResult.value;
+        this.logger.info(
+          `[repo-scope] Resolved repo context at startup: ${repoResult.value.remoteUrl ?? '(no remoteUrl)'}`,
+        );
+      } else {
+        this._repoContext = null;
+        this.logger.warn(
+          `[repo-scope] Startup resolver failed (${repoResult.error.kind}) — repo-scope filter disabled`,
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this._repoContext = null;
+      this.logger.warn(
+        `[repo-scope] Startup resolver threw unexpectedly: ${msg} — repo-scope filter disabled`,
+      );
+    }
+  }
+
+  /**
+   * Start the daemon. Acquires PID lock synchronously, then begins the polling loop.
+   *
+   * For production use, call `await bootstrap()` first so that repo context is
+   * pre-resolved and cycles never need to spawn their own git subprocess.
+   *
+   * @throws {Error} synchronously if the lock cannot be acquired or the daemon is not idle.
    */
   start(): void {
     if (this._state !== 'idle') {
@@ -145,7 +190,12 @@ export class EdgeDaemon {
 
     this._cycleInFlight = true;
     try {
-      this._lastCycleResult = await runCycle(this.config, this.deps, this.logger);
+      // Pass the stashed repoContext into deps so runCycle uses the pre-resolved
+      // value rather than spawning a fresh git subprocess on every cycle. When
+      // _repoContext is still undefined (scopeByRepo disabled, bootstrap skipped),
+      // runCycle falls back to its own per-call resolution.
+      const depsWithContext = { ...this.deps, repoContext: this._repoContext };
+      this._lastCycleResult = await runCycle(this.config, depsWithContext, this.logger);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       this.logger.error(`Cycle failed: ${msg}`);

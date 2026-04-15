@@ -35,6 +35,7 @@ function readPid(pidFilePath: string): number | null {
 async function cmdStart(deps: CliDeps): Promise<number> {
   const daemon = new EdgeDaemon(deps.config, deps.daemonDeps, deps.logger);
   try {
+    await daemon.bootstrap();
     daemon.start();
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

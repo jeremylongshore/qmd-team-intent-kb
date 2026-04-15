@@ -8,6 +8,7 @@ import type {
   ExportStateRepository,
 } from '@qmd-team-intent-kb/store';
 import type { QmdAdapter } from '@qmd-team-intent-kb/qmd-adapter';
+import type { RepoContext } from '@qmd-team-intent-kb/repo-resolver';
 
 /** Configuration for the edge daemon */
 export interface DaemonConfig {
@@ -63,6 +64,16 @@ export interface DaemonDependencies {
   exportStateRepo: ExportStateRepository;
   /** Optional — skip index update if absent. */
   qmdAdapter?: QmdAdapter;
+  /**
+   * Pre-resolved repo context, stashed at daemon startup.
+   *
+   * - `undefined` (absent): `runCycle` falls back to calling `resolveRepoContext()` itself.
+   *   This preserves backward compatibility for test paths that do not set this field.
+   * - `null`: resolution was attempted but failed at startup; scoping is disabled with a
+   *   warning (graceful-degradation contract).
+   * - `RepoContext`: successfully resolved — used directly, no per-cycle subprocess cost.
+   */
+  repoContext?: RepoContext | null;
 }
 
 /** Result of a single ingest step */
