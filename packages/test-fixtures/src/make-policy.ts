@@ -4,9 +4,10 @@ import { FIXED_NOW, DEFAULT_TENANT } from './constants.js';
 
 /**
  * Build a valid {@link GovernancePolicy} via Zod parse.
- * Defaults include both `secret_detection` and `content_length` rules which
- * covers the majority of policy-engine and curator tests.
- * Pass `overrides` to vary specific fields.
+ * Defaults to a single `secret_detection` reject rule — the minimum Zod
+ * requires (rules array must be non-empty) and matches the previous
+ * per-package defaults the store and curator tests were written against.
+ * Pass `overrides.rules = [...]` to supply a different rule set.
  */
 export function makePolicy(overrides?: Record<string, unknown>): GovernancePolicy {
   return GovernancePolicy.parse({
@@ -21,14 +22,6 @@ export function makePolicy(overrides?: Record<string, unknown>): GovernancePolic
         enabled: true,
         priority: 0,
         parameters: {},
-      },
-      {
-        id: 'rule-length',
-        type: 'content_length',
-        action: 'reject',
-        enabled: true,
-        priority: 1,
-        parameters: { min: 10, max: 50000 },
       },
     ],
     enabled: true,

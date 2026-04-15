@@ -9,6 +9,7 @@ import {
 } from '@qmd-team-intent-kb/store';
 import type Database from 'better-sqlite3';
 import type { MemoryCandidate } from '@qmd-team-intent-kb/schema';
+import { FIXED_NOW, DEFAULT_TENANT } from '@qmd-team-intent-kb/test-fixtures';
 
 export {
   makeCandidate,
@@ -16,6 +17,9 @@ export {
   FIXED_NOW as NOW,
   DEFAULT_TENANT as TENANT,
 } from '@qmd-team-intent-kb/test-fixtures';
+
+const NOW = FIXED_NOW;
+const TENANT = DEFAULT_TENANT;
 
 /** Create all daemon dependencies from an in-memory test database */
 export function makeDeps(db: Database.Database): DaemonDependencies {
@@ -30,9 +34,8 @@ export function makeDeps(db: Database.Database): DaemonDependencies {
 
 /** Create a default test config */
 export function makeConfig(overrides?: Partial<DaemonConfig>): DaemonConfig {
-  const NOW = '2026-01-15T10:00:00.000Z';
   return {
-    tenantId: 'team-alpha',
+    tenantId: TENANT,
     pollIntervalMs: 100, // fast for tests
     maxCandidatesPerCycle: 100,
     maxSpoolFileSizeBytes: 10 * 1024 * 1024,
