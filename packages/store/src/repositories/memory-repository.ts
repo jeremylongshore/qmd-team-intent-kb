@@ -1,58 +1,124 @@
+import { z } from 'zod';
 import type Database from 'better-sqlite3';
-import type { CuratedMemory, MemoryLifecycleState } from '@qmd-team-intent-kb/schema';
+import { CuratedMemory } from '@qmd-team-intent-kb/schema';
+import type { MemoryLifecycleState } from '@qmd-team-intent-kb/schema';
 
-/** Raw SQLite row shape for the curated_memories table */
-interface MemoryRow {
-  id: string;
-  candidate_id: string;
-  source: string;
-  content: string;
-  title: string;
-  category: string;
-  trust_level: string;
-  sensitivity: string;
-  author_json: string;
-  tenant_id: string;
-  metadata_json: string;
-  lifecycle: string;
-  content_hash: string;
-  policy_evaluations_json: string;
-  supersession_json: string | null;
-  promoted_at: string;
-  promoted_by_json: string;
-  updated_at: string;
-  version: number;
-}
+/**
+ * Zod schema for the raw SQLite row returned by better-sqlite3.
+ * Validates the flat DB representation before domain parsing.
+ */
+const MemoryRowSchema = z.object({
+  id: z.string(),
+  candidate_id: z.string(),
+  source: z.string(),
+  content: z.string(),
+  title: z.string(),
+  category: z.string(),
+  trust_level: z.string(),
+  sensitivity: z.string(),
+  author_json: z.string(),
+  tenant_id: z.string(),
+  metadata_json: z.string(),
+  lifecycle: z.string(),
+  content_hash: z.string(),
+  policy_evaluations_json: z.string(),
+  supersession_json: z.string().nullable(),
+  promoted_at: z.string(),
+  promoted_by_json: z.string(),
+  updated_at: z.string(),
+  version: z.number(),
+});
 
-function rowToMemory(row: MemoryRow): CuratedMemory {
-  const base = {
-    id: row.id,
-    candidateId: row.candidate_id,
-    source: row.source as CuratedMemory['source'],
-    content: row.content,
-    title: row.title,
-    category: row.category as CuratedMemory['category'],
-    trustLevel: row.trust_level as CuratedMemory['trustLevel'],
-    sensitivity: row.sensitivity as CuratedMemory['sensitivity'],
-    author: JSON.parse(row.author_json) as CuratedMemory['author'],
-    tenantId: row.tenant_id,
-    metadata: JSON.parse(row.metadata_json) as CuratedMemory['metadata'],
-    lifecycle: row.lifecycle as CuratedMemory['lifecycle'],
-    contentHash: row.content_hash,
-    policyEvaluations: JSON.parse(
-      row.policy_evaluations_json,
-    ) as CuratedMemory['policyEvaluations'],
-    supersession:
-      row.supersession_json !== null
-        ? (JSON.parse(row.supersession_json) as CuratedMemory['supersession'])
-        : undefined,
-    promotedAt: row.promoted_at,
-    promotedBy: JSON.parse(row.promoted_by_json) as CuratedMemory['promotedBy'],
-    updatedAt: row.updated_at,
-    version: row.version,
-  };
+/**
+ * Parse a raw SQLite row into a validated CuratedMemory domain object.
+ * Throws a descriptive error if the row fails validation.
+ *
+ * @param row - unknown value from better-sqlite3 .get()/.all()
+ * @returns validated CuratedMemory
+ * @throws Error with row id and Zod issue details if parsing fails
+ */
+function rowToMemory(row: unknown): CuratedMemory {
+  const flatResult = MemoryRowSchema.safeParse(row);
+  if (!flatResult.success) {
+    const issues = flatResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(`curated_memories row failed flat validation: ${issues.join('; ')}`);
+  }
+  const flat = flatResult.data;
 
-  return base as CuratedMemory;
+  let author: unknown;
+  let metadata: unknown;
+  let policyEvaluations: unknown;
+  let supersession: unknown;
+  let promotedBy: unknown;
+
+  try {
+    author = JSON.parse(flat.author_json);
+  } catch (e) {
+    throw new Error(
+      `curated_memories row id=${flat.id}: author_json is not valid JSON: ${String(e)}`,
+    );
+  }
+  try {
+    metadata = JSON.parse(flat.metadata_json);
+  } catch (e) {
+    throw new Error(
+      `curated_memories row id=${flat.id}: metadata_json is not valid JSON: ${String(e)}`,
+    );
+  }
+  try {
+    policyEvaluations = JSON.parse(flat.policy_evaluations_json);
+  } catch (e) {
+    throw new Error(
+      `curated_memories row id=${flat.id}: policy_evaluations_json is not valid JSON: ${String(e)}`,
+    );
+  }
+  if (flat.supersession_json !== null) {
+    try {
+      supersession = JSON.parse(flat.supersession_json);
+    } catch (e) {
+      throw new Error(
+        `curated_memories row id=${flat.id}: supersession_json is not valid JSON: ${String(e)}`,
+      );
+    }
+  }
+  try {
+    promotedBy = JSON.parse(flat.promoted_by_json);
+  } catch (e) {
+    throw new Error(
+      `curated_memories row id=${flat.id}: promoted_by_json is not valid JSON: ${String(e)}`,
+    );
+  }
+
+  const domainResult = CuratedMemory.safeParse({
+    id: flat.id,
+    candidateId: flat.candidate_id,
+    source: flat.source,
+    content: flat.content,
+    title: flat.title,
+    category: flat.category,
+    trustLevel: flat.trust_level,
+    sensitivity: flat.sensitivity,
+    author,
+    tenantId: flat.tenant_id,
+    metadata,
+    lifecycle: flat.lifecycle,
+    contentHash: flat.content_hash,
+    policyEvaluations,
+    supersession,
+    promotedAt: flat.promoted_at,
+    promotedBy,
+    updatedAt: flat.updated_at,
+    version: flat.version,
+  });
+
+  if (!domainResult.success) {
+    const issues = domainResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(
+      `curated_memories row id=${flat.id} failed domain validation: ${issues.join('; ')}`,
+    );
+  }
+
+  return domainResult.data;
 }
 
 /**
@@ -237,13 +303,13 @@ export class MemoryRepository {
 
   /** Find a memory by its primary key, or return null if not found. */
   findById(id: string): CuratedMemory | null {
-    const row = this.stmtFindById.get(id) as MemoryRow | undefined;
+    const row = this.stmtFindById.get(id);
     return row !== undefined ? rowToMemory(row) : null;
   }
 
   /** Return all curated memories belonging to the given tenant. */
   findByTenant(tenantId: string): CuratedMemory[] {
-    const rows = this.stmtFindByTenant.all(tenantId) as MemoryRow[];
+    const rows = this.stmtFindByTenant.all(tenantId);
     return rows.map(rowToMemory);
   }
 
@@ -252,13 +318,13 @@ export class MemoryRepository {
    * Useful for duplicate detection before promotion.
    */
   findByContentHash(hash: string): CuratedMemory | null {
-    const row = this.stmtFindByHash.get(hash) as MemoryRow | undefined;
+    const row = this.stmtFindByHash.get(hash);
     return row !== undefined ? rowToMemory(row) : null;
   }
 
   /** Return all memories in the given lifecycle state. */
   findByLifecycle(lifecycle: MemoryLifecycleState): CuratedMemory[] {
-    const rows = this.stmtFindByLifecycle.all(lifecycle) as MemoryRow[];
+    const rows = this.stmtFindByLifecycle.all(lifecycle);
     return rows.map(rowToMemory);
   }
 
@@ -345,13 +411,13 @@ export class MemoryRepository {
 
   /** Find active memories not updated since the given ISO date */
   findStale(olderThan: string): CuratedMemory[] {
-    const rows = this.stmtFindStale.all(olderThan) as MemoryRow[];
+    const rows = this.stmtFindStale.all(olderThan);
     return rows.map(rowToMemory);
   }
 
   /** Find memories by tenant and lifecycle state */
   findByTenantAndLifecycle(tenantId: string, lifecycle: MemoryLifecycleState): CuratedMemory[] {
-    const rows = this.stmtFindByTenantAndLifecycle.all(tenantId, lifecycle) as MemoryRow[];
+    const rows = this.stmtFindByTenantAndLifecycle.all(tenantId, lifecycle);
     return rows.map(rowToMemory);
   }
 
@@ -388,7 +454,7 @@ export class MemoryRepository {
       ORDER BY rank
       LIMIT 100
     `;
-    const rows = this.db.prepare(sql).all(params) as MemoryRow[];
+    const rows = this.db.prepare(sql).all(params);
     return rows.map(rowToMemory);
   }
 
@@ -404,7 +470,7 @@ export class MemoryRepository {
     appendOptionalFilters(conditions, params, tenantId, categories, '');
 
     const sql = `SELECT * FROM curated_memories WHERE ${conditions.join(' AND ')} LIMIT 100`;
-    const rows = this.db.prepare(sql).all(params) as MemoryRow[];
+    const rows = this.db.prepare(sql).all(params);
     return rows.map(rowToMemory);
   }
 }

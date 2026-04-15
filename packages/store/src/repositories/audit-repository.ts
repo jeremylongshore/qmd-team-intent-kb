@@ -1,29 +1,71 @@
+import { z } from 'zod';
 import type Database from 'better-sqlite3';
-import type { AuditEvent } from '@qmd-team-intent-kb/schema';
+import { AuditEvent } from '@qmd-team-intent-kb/schema';
 
-/** Raw SQLite row shape for the audit_events table */
-interface AuditRow {
-  id: string;
-  action: string;
-  memory_id: string;
-  tenant_id: string;
-  actor_json: string;
-  reason: string | null;
-  details_json: string;
-  timestamp: string;
-}
+/**
+ * Zod schema for the raw SQLite row returned by better-sqlite3.
+ * Validates the flat DB representation before domain parsing.
+ */
+const AuditRowSchema = z.object({
+  id: z.string(),
+  action: z.string(),
+  memory_id: z.string(),
+  tenant_id: z.string(),
+  actor_json: z.string(),
+  reason: z.string().nullable(),
+  details_json: z.string(),
+  timestamp: z.string(),
+});
 
-function rowToEvent(row: AuditRow): AuditEvent {
-  return {
-    id: row.id,
-    action: row.action as AuditEvent['action'],
-    memoryId: row.memory_id,
-    tenantId: row.tenant_id,
-    actor: JSON.parse(row.actor_json) as AuditEvent['actor'],
-    reason: row.reason ?? undefined,
-    details: JSON.parse(row.details_json) as AuditEvent['details'],
-    timestamp: row.timestamp,
-  };
+/**
+ * Parse a raw SQLite row into a validated AuditEvent domain object.
+ * Throws a descriptive error if the row fails validation.
+ *
+ * @param row - unknown value from better-sqlite3 .get()/.all()
+ * @returns validated AuditEvent
+ * @throws Error with row id and Zod issue details if parsing fails
+ */
+function rowToEvent(row: unknown): AuditEvent {
+  const flatResult = AuditRowSchema.safeParse(row);
+  if (!flatResult.success) {
+    const issues = flatResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(`audit_events row failed flat validation: ${issues.join('; ')}`);
+  }
+  const flat = flatResult.data;
+
+  let actor: unknown;
+  let details: unknown;
+
+  try {
+    actor = JSON.parse(flat.actor_json);
+  } catch (e) {
+    throw new Error(`audit_events row id=${flat.id}: actor_json is not valid JSON: ${String(e)}`);
+  }
+  try {
+    details = JSON.parse(flat.details_json);
+  } catch (e) {
+    throw new Error(`audit_events row id=${flat.id}: details_json is not valid JSON: ${String(e)}`);
+  }
+
+  const domainResult = AuditEvent.safeParse({
+    id: flat.id,
+    action: flat.action,
+    memoryId: flat.memory_id,
+    tenantId: flat.tenant_id,
+    actor,
+    reason: flat.reason ?? undefined,
+    details,
+    timestamp: flat.timestamp,
+  });
+
+  if (!domainResult.success) {
+    const issues = domainResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(
+      `audit_events row id=${flat.id} failed domain validation: ${issues.join('; ')}`,
+    );
+  }
+
+  return domainResult.data;
 }
 
 /**
@@ -89,19 +131,19 @@ export class AuditRepository {
 
   /** Return all events associated with the given memory, in chronological order. */
   findByMemory(memoryId: string): AuditEvent[] {
-    const rows = this.stmtFindByMemory.all(memoryId) as AuditRow[];
+    const rows = this.stmtFindByMemory.all(memoryId);
     return rows.map(rowToEvent);
   }
 
   /** Return all events for the given tenant, in chronological order. */
   findByTenant(tenantId: string): AuditEvent[] {
-    const rows = this.stmtFindByTenant.all(tenantId) as AuditRow[];
+    const rows = this.stmtFindByTenant.all(tenantId);
     return rows.map(rowToEvent);
   }
 
   /** Return all events of the given action type, in chronological order. */
   findByAction(action: string): AuditEvent[] {
-    const rows = this.stmtFindByAction.all(action) as AuditRow[];
+    const rows = this.stmtFindByAction.all(action);
     return rows.map(rowToEvent);
   }
 
@@ -117,7 +159,7 @@ export class AuditRepository {
 
   /** Find events within a time range (ISO string comparison) */
   findInRange(startDate: string, endDate: string): AuditEvent[] {
-    const rows = this.stmtFindInRange.all(startDate, endDate) as AuditRow[];
+    const rows = this.stmtFindInRange.all(startDate, endDate);
     return rows.map(rowToEvent);
   }
 

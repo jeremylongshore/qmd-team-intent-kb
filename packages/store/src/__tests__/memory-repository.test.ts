@@ -443,3 +443,67 @@ describe('MemoryRepository — searchByText', () => {
     expect(results).toHaveLength(0);
   });
 });
+
+describe('MemoryRepository — Zod-on-read malformed row rejection', () => {
+  let db: Database.Database;
+  let repo: MemoryRepository;
+
+  beforeEach(() => {
+    db = createTestDatabase();
+    repo = new MemoryRepository(db);
+  });
+
+  it('throws a descriptive error when policy_evaluations_json contains invalid JSON', () => {
+    // Insert a row with malformed policy_evaluations_json to simulate DB corruption
+    const id = randomUUID();
+    const validAuthor = JSON.stringify({ type: 'ai', id: 'session-1', name: 'Claude' });
+    db.prepare(
+      `
+      INSERT INTO curated_memories (
+        id, candidate_id, source, content, title, category,
+        trust_level, sensitivity, author_json, tenant_id,
+        metadata_json, lifecycle, content_hash,
+        policy_evaluations_json, supersession_json,
+        promoted_at, promoted_by_json, updated_at, version
+      ) VALUES (
+        ?, ?, 'claude_session', 'Some content', 'Some title', 'pattern',
+        'high', 'internal', ?, 'team-alpha',
+        '{}', 'active', ?,
+        'NOT_VALID_JSON', NULL,
+        ?, ?, ?, 1
+      )
+    `,
+    ).run(id, randomUUID(), validAuthor, HASH_A, NOW, validAuthor, NOW);
+
+    expect(() => repo.findById(id)).toThrowError(
+      /curated_memories row id=.+: policy_evaluations_json is not valid JSON/,
+    );
+  });
+
+  it('throws a descriptive error when lifecycle contains an invalid enum value', () => {
+    // Insert a row with an unrecognised lifecycle value to simulate schema drift
+    const id = randomUUID();
+    const validAuthor = JSON.stringify({ type: 'human', id: 'user-1', name: 'Test User' });
+    db.prepare(
+      `
+      INSERT INTO curated_memories (
+        id, candidate_id, source, content, title, category,
+        trust_level, sensitivity, author_json, tenant_id,
+        metadata_json, lifecycle, content_hash,
+        policy_evaluations_json, supersession_json,
+        promoted_at, promoted_by_json, updated_at, version
+      ) VALUES (
+        ?, ?, 'claude_session', 'Some content', 'Some title', 'pattern',
+        'high', 'internal', ?, 'team-alpha',
+        '{}', 'INVALID_LIFECYCLE', ?,
+        '[]', NULL,
+        ?, ?, ?, 1
+      )
+    `,
+    ).run(id, randomUUID(), validAuthor, HASH_B, NOW, validAuthor, NOW);
+
+    expect(() => repo.findById(id)).toThrowError(
+      /curated_memories row id=.+ failed domain validation/,
+    );
+  });
+});

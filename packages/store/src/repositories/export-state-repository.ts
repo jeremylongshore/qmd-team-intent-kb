@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type Database from 'better-sqlite3';
 
 /** The last-export tracking record for a single export target */
@@ -7,18 +8,35 @@ export interface ExportState {
   updatedAt: string;
 }
 
-/** Raw SQLite row shape for the export_state table */
-interface ExportStateRow {
-  target_id: string;
-  last_exported_at: string;
-  updated_at: string;
-}
+/**
+ * Zod schema for the raw SQLite row returned by better-sqlite3.
+ * Validates the flat DB representation before mapping to ExportState.
+ */
+const ExportStateRowSchema = z.object({
+  target_id: z.string(),
+  last_exported_at: z.string(),
+  updated_at: z.string(),
+});
 
-function rowToState(row: ExportStateRow): ExportState {
+/**
+ * Parse a raw SQLite row into a validated ExportState object.
+ * Throws a descriptive error if the row fails validation.
+ *
+ * @param row - unknown value from better-sqlite3 .get()
+ * @returns validated ExportState
+ * @throws Error with column details if parsing fails
+ */
+function rowToState(row: unknown): ExportState {
+  const result = ExportStateRowSchema.safeParse(row);
+  if (!result.success) {
+    const issues = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new Error(`export_state row failed validation: ${issues.join('; ')}`);
+  }
+  const flat = result.data;
   return {
-    targetId: row.target_id,
-    lastExportedAt: row.last_exported_at,
-    updatedAt: row.updated_at,
+    targetId: flat.target_id,
+    lastExportedAt: flat.last_exported_at,
+    updatedAt: flat.updated_at,
   };
 }
 
@@ -47,7 +65,7 @@ export class ExportStateRepository {
 
   /** Return the export state for the given target, or null if never exported. */
   get(targetId: string): ExportState | null {
-    const row = this.stmtGet.get(targetId) as ExportStateRow | undefined;
+    const row = this.stmtGet.get(targetId);
     return row !== undefined ? rowToState(row) : null;
   }
 
