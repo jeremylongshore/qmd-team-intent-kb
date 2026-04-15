@@ -1,7 +1,7 @@
 import type { CandidateRepository } from '@qmd-team-intent-kb/store';
 import { MemoryCandidate } from '@qmd-team-intent-kb/schema';
 import { computeContentHash } from '@qmd-team-intent-kb/common';
-import { ApiError, badRequest, notFound } from '../errors.js';
+import { badRequest, notFound } from '../errors.js';
 
 /**
  * Service layer for memory candidate intake and retrieval.
@@ -56,6 +56,3 @@ export class CandidateService {
     return this.repo.findByContentHash(hash);
   }
 }
-
-// Re-export for route-layer instanceof checks
-export { ApiError };

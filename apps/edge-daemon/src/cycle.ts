@@ -17,7 +17,7 @@ import { withRetry } from './retry.js';
  * Reads ~/.claude/settings.json and checks for memoryCapture.enabled === false.
  * Safe default: if file is absent or unparseable, returns true (proceed).
  */
-export function isMemoryCaptureEnabled(): boolean {
+function isMemoryCaptureEnabled(): boolean {
   try {
     const settingsPath = join(homedir(), '.claude', 'settings.json');
     if (!existsSync(settingsPath)) return true;

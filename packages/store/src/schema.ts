@@ -114,7 +114,7 @@ export const TABLE_DDL: string[] = [
  *
  * IMPORTANT: Never modify existing migrations — only append new ones.
  */
-export interface Migration {
+interface Migration {
   version: number;
   name: string;
   sql: string;
