@@ -56,7 +56,7 @@ export function normalizeRemoteUrl(remoteUrl: string): string {
 }
 
 interface ConfigFile {
-  tenantId?: unknown;
+  tenantId?: string;
 }
 
 function readConfigTenant(rootDir: string): string | null {

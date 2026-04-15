@@ -16,8 +16,8 @@ const MANIFEST_PROBES: Array<(dir: string) => boolean> = [
 ];
 
 interface PackageJson {
-  name?: unknown;
-  workspaces?: unknown;
+  name?: string;
+  workspaces?: string[] | { packages?: string[] };
 }
 
 function safeReadPackageJson(dir: string): PackageJson | null {
@@ -37,7 +37,7 @@ function hasNpmWorkspaces(dir: string): boolean {
   if (!pkg) return false;
   const ws = pkg.workspaces;
   if (Array.isArray(ws) && ws.length > 0) return true;
-  if (ws && typeof ws === 'object' && Array.isArray((ws as { packages?: unknown }).packages)) {
+  if (ws && !Array.isArray(ws) && Array.isArray(ws.packages)) {
     return true;
   }
   return false;
@@ -104,7 +104,7 @@ function findWorkspacePackage(cwd: string, workspaceRoot: string): string | null
   let dir = cwd;
   while (dir !== workspaceRoot) {
     const pkg = safeReadPackageJson(dir);
-    if (pkg && typeof pkg.name === 'string' && pkg.name.trim().length > 0) {
+    if (pkg?.name && pkg.name.trim().length > 0) {
       return pkg.name.trim();
     }
     const parent = dirname(dir);

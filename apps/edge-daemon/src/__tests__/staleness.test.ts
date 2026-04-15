@@ -33,7 +33,7 @@ function makeStaleMemory(overrides?: Partial<CuratedMemory>): CuratedMemory {
     updatedAt: OLD_DATE,
     version: 1,
     ...overrides,
-  } as CuratedMemory;
+  } satisfies CuratedMemory;
 }
 
 describe('runStalenessSweep', () => {
