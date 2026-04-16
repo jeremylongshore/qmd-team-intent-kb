@@ -25,7 +25,8 @@
     "fastify": "^5.8.5",
     "@qmd-team-intent-kb/schema": "workspace:*",
     "@qmd-team-intent-kb/common": "workspace:*",
-    "@qmd-team-intent-kb/store": "workspace:*"
+    "@qmd-team-intent-kb/store": "workspace:*",
+    "@qmd-team-intent-kb/curator": "workspace:*"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
