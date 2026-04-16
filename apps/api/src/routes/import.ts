@@ -1,6 +1,13 @@
 import type { FastifyInstance } from 'fastify';
-import { ApiError } from '../errors.js';
+import { z } from 'zod';
+import { ApiError, badRequest } from '../errors.js';
 import type { ImportService } from '../services/import-service.js';
+
+const ImportBodySchema = z.object({
+  sourcePath: z.string().min(1),
+  tenantId: z.string().min(1),
+  excludeDirs: z.array(z.string()).optional(),
+});
 
 /**
  * Register import routes for vault import operations.
@@ -23,15 +30,16 @@ export function registerImportRoutes(app: FastifyInstance, service: ImportServic
     },
     async (request, reply) => {
       try {
-        const body = request.body as {
-          sourcePath?: string;
-          tenantId?: string;
-          excludeDirs?: string[];
-        };
+        const parsed = ImportBodySchema.safeParse(request.body);
+        if (!parsed.success) {
+          throw badRequest(
+            parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+          );
+        }
         const result = await service.preview(
-          body.sourcePath ?? '',
-          body.tenantId ?? '',
-          body.excludeDirs,
+          parsed.data.sourcePath,
+          parsed.data.tenantId,
+          parsed.data.excludeDirs,
         );
         return reply.status(200).send(result);
       } catch (err) {
@@ -55,15 +63,16 @@ export function registerImportRoutes(app: FastifyInstance, service: ImportServic
     },
     async (request, reply) => {
       try {
-        const body = request.body as {
-          sourcePath?: string;
-          tenantId?: string;
-          excludeDirs?: string[];
-        };
+        const parsed = ImportBodySchema.safeParse(request.body);
+        if (!parsed.success) {
+          throw badRequest(
+            parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+          );
+        }
         const result = await service.execute(
-          body.sourcePath ?? '',
-          body.tenantId ?? '',
-          body.excludeDirs,
+          parsed.data.sourcePath,
+          parsed.data.tenantId,
+          parsed.data.excludeDirs,
         );
         return reply.status(201).send(result);
       } catch (err) {

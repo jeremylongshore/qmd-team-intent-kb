@@ -74,9 +74,12 @@ function coerceValue(raw: string): string | string[] | number | boolean {
       .filter((s) => s !== '');
   }
 
-  // Numbers
-  const num = Number(raw);
-  if (!Number.isNaN(num) && raw !== '') return num;
+  // Numbers (reject whitespace-only strings — Number('  ') is 0)
+  const trimmedRaw = raw.trim();
+  if (trimmedRaw !== '' && trimmedRaw === raw) {
+    const num = Number(raw);
+    if (!Number.isNaN(num)) return num;
+  }
 
   // Quoted or bare string
   return unquote(raw);
