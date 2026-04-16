@@ -167,11 +167,17 @@ export class MemoryLinksRepository {
           FROM memory_links ml
           JOIN graph g ON ml.source_memory_id = g.memoryId
           WHERE g.depth < @maxDepth
-      )
-      SELECT DISTINCT memoryId, MIN(depth) AS depth, linkType, weight
+      ),
+      ranked_paths AS (
+        SELECT
+          *,
+          ROW_NUMBER() OVER(PARTITION BY memoryId ORDER BY depth ASC, weight DESC) as rn
         FROM graph
         WHERE memoryId != @start
-        GROUP BY memoryId
+      )
+      SELECT memoryId, depth, linkType, weight
+        FROM ranked_paths
+        WHERE rn = 1
         ORDER BY depth ASC, weight DESC
     `;
     return this.db.prepare(sql).all({ start: memoryId, maxDepth }) as GraphNode[];
