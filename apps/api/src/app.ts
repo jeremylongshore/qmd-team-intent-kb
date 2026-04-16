@@ -22,6 +22,7 @@ import { registerAuditRoutes } from './routes/audit.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerImportRoutes } from './routes/import.js';
 import { ImportService } from './services/import-service.js';
+import { registerGraphRoutes } from './routes/graph.js';
 import { registerRateLimiter } from './middleware/rate-limiter.js';
 import { registerApiKeyAuth } from './middleware/api-key-auth.js';
 import { registerInputSanitizer } from './middleware/input-sanitizer.js';
@@ -88,6 +89,7 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
     registerAuditRoutes(scope, auditRepo);
     registerSearchRoutes(scope, searchService);
     registerImportRoutes(scope, importService);
+    registerGraphRoutes(scope, linksRepo, memoryRepo);
   });
 
   return app;
