@@ -11,6 +11,7 @@ import type {
 } from '@qmd-team-intent-kb/store';
 import type { PipelineResult } from '@qmd-team-intent-kb/policy-engine';
 import type { SupersessionMatch } from '../supersession/supersession-detector.js';
+import { extractWikiLinks } from '../import/wikilink-parser.js';
 
 /** Input bundle for a single promotion operation */
 export interface PromotionInput {
@@ -124,6 +125,34 @@ export function promote(
         importBatchId: null,
         createdAt: now,
       });
+    }
+
+    // Extract wiki-links from content and create relates_to edges
+    if (linksRepo) {
+      const wikiLinks = extractWikiLinks(input.candidate.content);
+      for (const wl of wikiLinks) {
+        const targets = memoryRepo.searchByText(wl.slug);
+        const match = targets.find(
+          (m) => m.title.toLowerCase() === wl.slug.toLowerCase() && m.id !== memoryId,
+        );
+        if (match) {
+          try {
+            linksRepo.insert({
+              id: randomUUID(),
+              sourceMemoryId: memoryId,
+              targetMemoryId: match.id,
+              linkType: 'relates_to',
+              weight: 1.0,
+              createdBy: 'curator',
+              source: 'curator',
+              importBatchId: null,
+              createdAt: now,
+            });
+          } catch {
+            // Unique constraint violation — link already exists, skip
+          }
+        }
+      }
     }
 
     auditRepo.insert(
