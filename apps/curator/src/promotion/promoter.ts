@@ -4,7 +4,11 @@ import {
   AuditEvent as AuditEventSchema,
 } from '@qmd-team-intent-kb/schema';
 import type { MemoryCandidate, CuratedMemory, PolicyEvaluation } from '@qmd-team-intent-kb/schema';
-import type { MemoryRepository, AuditRepository, MemoryLinksRepository } from '@qmd-team-intent-kb/store';
+import type {
+  MemoryRepository,
+  AuditRepository,
+  MemoryLinksRepository,
+} from '@qmd-team-intent-kb/store';
 import type { PipelineResult } from '@qmd-team-intent-kb/policy-engine';
 import type { SupersessionMatch } from '../supersession/supersession-detector.js';
 
@@ -104,7 +108,6 @@ export function promote(
           timestamp: now,
         }),
       );
-
     }
 
     memoryRepo.insert(memory);
