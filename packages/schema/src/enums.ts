@@ -60,3 +60,18 @@ export type Sensitivity = z.infer<typeof Sensitivity>;
 
 export const AuthorType = z.enum(['human', 'ai', 'system']);
 export type AuthorType = z.infer<typeof AuthorType>;
+
+export const LinkType = z.enum([
+  'relates_to',
+  'supersedes',
+  'contradicts',
+  'depends_on',
+  'part_of',
+]);
+export type LinkType = z.infer<typeof LinkType>;
+
+export const LinkSource = z.enum(['curator', 'import', 'manual', 'mcp']);
+export type LinkSource = z.infer<typeof LinkSource>;
+
+export const ImportBatchStatus = z.enum(['active', 'completed', 'rolled_back']);
+export type ImportBatchStatus = z.infer<typeof ImportBatchStatus>;

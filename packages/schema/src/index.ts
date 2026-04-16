@@ -11,6 +11,9 @@ export {
   Confidence,
   Sensitivity,
   AuthorType,
+  LinkType,
+  LinkSource,
+  ImportBatchStatus,
 } from './enums.js';
 
 export {
