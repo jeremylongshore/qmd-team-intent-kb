@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-16
+
+### Added
+
+- **Knowledge Graph**: `memory_links` table with 5 link types (relates_to, supersedes, contradicts, depends_on, part_of), bidirectional neighbor queries, and recursive CTE graph traversal up to configurable depth.
+- **Import Batches**: `import_batches` table for batch lifecycle tracking (active → completed | rolled_back) with file/created/rejected/skipped counts.
+- **Vault Import Pipeline**: Recursive Markdown directory walker with `.obsidian/`, `.trash/`, `.git/` exclusion; YAML frontmatter parser (title, category, tags); content hash collision detection against curated memories, candidates, and intra-batch duplicates; batch-tracked candidate creation; rollback capability.
+- **Import API Routes**: `POST /api/import/preview` (dry-run), `POST /api/import` (execute), `GET /api/import/batches` (list), `GET /api/import/batches/:id` (detail), `DELETE /api/import/batches/:id` (rollback).
+- **Graph Traversal API**: `GET /api/memories/:id/neighbors` (bidirectional links), `GET /api/memories/:id/graph?depth=N` (recursive traversal, max depth 5).
+- **Wiki-Link Resolution**: Parser for `[[slug]]` and `[[slug|display]]` syntax with code-block awareness. Write-path: auto-creates `relates_to` graph edges during promotion. Read-path: `?resolve_links=true` query param on memory GET rewrites links to API URLs.
+- **MCP Tools**: `teamkb_vault_preview`, `teamkb_vault_import`, `teamkb_vault_rollback` for Obsidian vault import; `teamkb_neighbors` for graph exploration.
+- **Schema Enums**: `LinkType`, `LinkSource`, `ImportBatchStatus` for graph and import domain model.
+- **Repositories**: `MemoryLinksRepository` (CRUD + neighbors + traverse), `ImportBatchRepository` (CRUD + updateCounts + complete + rollback).
+- **Curator Supersession Edges**: Promoter persists `supersedes` graph edges with Jaccard similarity weight when `MemoryLinksRepository` is provided.
+- **Git Exporter**: `formatMemoryAsMarkdown` accepts optional `LinkResolver` callback for wiki-link resolution on export.
+- Import conversion recipes documentation (`000-docs/030-DR-GUID-import-conversion-recipes.md`) covering Obsidian, Notion, Google Docs, Confluence, and pandoc workflows.
+
+### Changed
+
+- **Zod 4 Migration**: `packages/schema` and `packages/repo-resolver` migrated from zod@3 to zod@4. Fixed `z.record(z.unknown())` → `z.record(z.string(), z.unknown())` and nested `.default({})` explicit full defaults for Zod 4 compatibility.
+- **MCP Server**: Removed inline enum workarounds — now imports `MemoryCategory` and `MemoryLifecycleState` directly from schema package.
+- `CandidateRepository.insert()` accepts optional `importBatchId` for batch association.
+- `CandidateRepository.deleteByBatch()` enables batch rollback.
+
+### Fixed
+
+- `MemoryLinksRepository.traverse()` uses `ROW_NUMBER` window function for deterministic results when multiple paths to the same node exist.
+
 ## [0.4.0] - 2026-04-15
 
 ### Added
