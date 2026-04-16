@@ -9,8 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `apps/api`: generated OpenAPI 3.1 spec served at `GET /openapi.json` and Swagger UI at `GET /docs`, powered by `@fastify/swagger` + `@fastify/swagger-ui`. Routes declare minimal schema metadata (tags, summary, description) for navigable documentation. The spec and docs UI are exempt from API key authentication so they stay publicly reachable. (bead `qmd-team-intent-kb-fwp`)
+- `apps/api`: generated OpenAPI 3.1 spec served at `GET /openapi.json` and Swagger UI at `GET /docs`, powered by `@fastify/swagger` + `@fastify/swagger-ui`. Routes declare minimal schema metadata (tags, summary, description) for navigable documentation. The spec and docs UI are exempt from API key authentication so they stay publicly reachable.
 - npm publishing configuration for reusable library packages (`@qmd-team-intent-kb/schema`, `@qmd-team-intent-kb/common`, `@qmd-team-intent-kb/repo-resolver`) — `publishConfig.access = public`, `files` allowlist, and minimal package READMEs. Internal-only packages (`store`, `qmd-adapter`, `claude-runtime`, `test-fixtures`, `policy-engine`) remain `private: true`. Strategy documented in `000-docs/029-OD-RELS-npm-publishing-strategy.md`.
+- `apps/edge-daemon`: configurable health-server bind host via `DAEMON_HEALTH_HOST` environment variable. Defaults to `127.0.0.1` for security; set to `0.0.0.0` for container deployments.
+- `apps/edge-daemon`: repo-scope filtering now surfaces `unscoped` candidate count for operator visibility when candidates bypass scoping.
+
+### Changed
+
+- Consolidated shared test fixture factories (`makeCandidate`, `makeMemory`, `RecordingLogger`) into `@qmd-team-intent-kb/test-fixtures` package. All test files now import from the shared package.
+- Removed unused code paths identified by knip sweep, including vestigial logger implementations and weak type casts.
+- Schema tests refactored to use rest-destructure pattern instead of `as Record<string, unknown>` delete pattern.
+- Store repositories now validate on read with Zod instead of type casts.
+- Upgraded `actions/checkout` to v6, `pino` to v10.3.1, `prettier` to v3.8.3.
+
+### Fixed
+
+- `apps/edge-daemon`: health-server start now properly awaited during `stop()` to prevent resource leaks.
+- `apps/edge-daemon`: systemd unit override now correctly configures spool and PID paths to `/var/lib/edge-daemon`.
+- `apps/edge-daemon`: `pino-pretty` moved from `devDependencies` to `dependencies` for production logging.
+- `000-docs`: runbook Health Check section now documents `/healthz` and `/last-cycle` endpoints.
+- `.github/workflows`: Gemini review prompt and MCP server configuration restored after accidental removal.
 
 ### Security
 

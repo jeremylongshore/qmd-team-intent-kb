@@ -74,14 +74,14 @@ qmd-team-intent-kb/
 | `packages/claude-runtime` | Captures memory proposals from Claude Code sessions. Hooks into session events, applies pre-policy secret filtering.            |
 | `packages/policy-engine`  | Evaluates candidates against governance rules. Secret detection, dedup scoring, relevance, tenant isolation. All deterministic. |
 | `packages/store`          | SQLite persistence layer via better-sqlite3. WAL mode, 5 repository classes, in-memory test database helper.                    |
-| `packages/repo-resolver`  | Multi-repo context resolution. Determines project/team ownership and enforces tenant boundaries. **(scaffolded)**               |
+| `packages/repo-resolver`  | Multi-repo context resolution. Determines project/team ownership and enforces tenant boundaries.                                |
 | `packages/common`         | Shared utilities: Result<T, E> type, SHA-256 content hashing, path-safety validation, freshness scoring with reranking.         |
 
 ## Status
 
-**v0.2.0 — Core platform with full relevancy lifecycle.**
+**v0.4.0 — Production-ready platform with supply-chain signing.**
 
-All core subsystems are functional with 867 tests passing:
+All core subsystems are functional with 1164 tests passing:
 
 - **Schema & Domain Model** — Zod schemas, lifecycle state machine, 12 enum types (Phase 1)
 - **Claude Runtime Capture** — Session capture, local JSONL spool, 11-pattern secret detection (Phase 2)
@@ -93,8 +93,9 @@ All core subsystems are functional with 867 tests passing:
 - **Git Exporter** — Incremental Markdown export, YAML frontmatter, category routing (Phase 6)
 - **Reporting** — Lifecycle analytics, aggregators, formatters (Phase 7)
 - **Security Hardening** — API middleware (rate-limiter, auth, input sanitizer), content classifier, export gating, path-safety (Phase 8)
-
-**Not yet implemented** (deferred to post-v1): `packages/repo-resolver` (multi-repo context resolution).
+- **Repo Resolver** — Multi-repo context resolution with monorepo detection, tenant derivation, and caching (Phase 9)
+- **OpenAPI Documentation** — Generated OpenAPI 3.1 spec at `/openapi.json` and Swagger UI at `/docs` (Phase 10)
+- **Supply-Chain Security** — Cosign keyless signing + SLSA Level 3 provenance for container images (Phase 10)
 
 ## Getting Started
 
