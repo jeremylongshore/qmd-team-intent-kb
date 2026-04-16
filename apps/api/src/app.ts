@@ -84,7 +84,7 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   void app.register(async (scope) => {
     registerHealthRoutes(scope, healthService);
     registerCandidateRoutes(scope, candidateService);
-    registerMemoryRoutes(scope, memoryService);
+    registerMemoryRoutes(scope, memoryService, memoryRepo);
     registerPolicyRoutes(scope, policyService);
     registerAuditRoutes(scope, auditRepo);
     registerSearchRoutes(scope, searchService);

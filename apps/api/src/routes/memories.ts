@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { MemoryLifecycleState } from '@qmd-team-intent-kb/schema';
+import type { MemoryRepository } from '@qmd-team-intent-kb/store';
+import { resolveWikiLinks } from '@qmd-team-intent-kb/curator';
 import { ApiError } from '../errors.js';
 import type { MemoryService } from '../services/memory-service.js';
 
@@ -14,7 +16,11 @@ import type { MemoryService } from '../services/memory-service.js';
  * Note: by-hash must be registered before :id so Fastify does not treat
  * "by-hash" as a UUID parameter value.
  */
-export function registerMemoryRoutes(app: FastifyInstance, service: MemoryService): void {
+export function registerMemoryRoutes(
+  app: FastifyInstance,
+  service: MemoryService,
+  memoryRepo?: MemoryRepository,
+): void {
   app.get(
     '/api/memories',
     {
@@ -66,7 +72,18 @@ export function registerMemoryRoutes(app: FastifyInstance, service: MemoryServic
     async (request, reply) => {
       try {
         const { id } = request.params as { id: string };
+        const query = request.query as { resolve_links?: string };
         const memory = service.getById(id);
+
+        if (query.resolve_links === 'true' && memoryRepo) {
+          const { resolvedContent } = resolveWikiLinks(memory.content, (slug) => {
+            const matches = memoryRepo.searchByText(slug);
+            const match = matches.find((m) => m.title.toLowerCase() === slug.toLowerCase());
+            return match ? { id: match.id, title: match.title } : null;
+          });
+          return reply.send({ ...memory, content: resolvedContent });
+        }
+
         return reply.send(memory);
       } catch (err) {
         if (err instanceof ApiError) {
