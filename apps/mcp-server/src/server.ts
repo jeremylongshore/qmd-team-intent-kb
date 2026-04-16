@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { MemoryCategory, MemoryLifecycleState } from '@qmd-team-intent-kb/schema';
 import type { McpServerConfig } from './config.js';
 import { propose } from './tools/propose.js';
 import { importFiles } from './tools/import.js';
@@ -9,32 +10,8 @@ import { runSync, isQmdAvailable } from './tools/sync.js';
 
 const VERSION = '0.1.0';
 
-// ---------------------------------------------------------------------------
-// Inline enum definitions for tool parameter schemas.
-//
-// Intentionally NOT imported from @qmd-team-intent-kb/schema: that package
-// resolves against zod@3 while the MCP SDK (and the root workspace) uses
-// zod@4. Passing v3 schema objects to server.tool() triggers "Mixed Zod
-// versions detected" at runtime. The enum values here mirror enums.ts exactly.
-// ---------------------------------------------------------------------------
-
-const MEMORY_CATEGORY_VALUES = [
-  'decision',
-  'pattern',
-  'convention',
-  'architecture',
-  'troubleshooting',
-  'onboarding',
-  'reference',
-] as const;
-
-const LIFECYCLE_STATE_VALUES = ['active', 'deprecated', 'superseded', 'archived'] as const;
-
 /**
  * Create a configured McpServer with all team-kb tools registered.
- *
- * All tool parameter schemas use the zod instance from the root workspace
- * (zod@4), which is the same instance the MCP SDK was resolved against.
  *
  * Call `isQmdAvailable()` before calling this function if you want to
  * conditionally register the sync tool.
@@ -54,12 +31,9 @@ export function createServer(
     {
       title: z.string().min(1).describe('Short descriptive title for the memory'),
       content: z.string().min(1).describe('Full content of the memory'),
-      category: z
-        .enum(MEMORY_CATEGORY_VALUES)
-        .optional()
-        .describe(
-          'Memory category: decision, pattern, convention, architecture, troubleshooting, onboarding, reference',
-        ),
+      category: MemoryCategory.optional().describe(
+        'Memory category: decision, pattern, convention, architecture, troubleshooting, onboarding, reference',
+      ),
       filePaths: z
         .array(z.string())
         .optional()
@@ -70,8 +44,7 @@ export function createServer(
         {
           title: params.title,
           content: params.content,
-          // Narrow to MemoryCategory via runtime validation in propose()
-          category: params.category as Parameters<typeof propose>[0]['category'],
+          category: params.category,
           filePaths: params.filePaths,
         },
         config,
@@ -141,7 +114,7 @@ export function createServer(
     'Apply a lifecycle transition to a curated memory. Validates against the state machine and writes an audit event.',
     {
       memoryId: z.string().uuid().describe('UUID of the curated memory to transition'),
-      to: z.enum(LIFECYCLE_STATE_VALUES).describe('Target lifecycle state'),
+      to: MemoryLifecycleState.describe('Target lifecycle state'),
       reason: z.string().min(1).describe('Human-readable reason for the transition'),
       actor: z
         .string()
@@ -152,8 +125,7 @@ export function createServer(
       const result = applyTransition(
         {
           memoryId: params.memoryId,
-          // Narrow to MemoryLifecycleState via runtime validation in applyTransition()
-          to: params.to as Parameters<typeof applyTransition>[0]['to'],
+          to: params.to,
           reason: params.reason,
           actor: params.actor,
         },
