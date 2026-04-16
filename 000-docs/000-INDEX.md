@@ -31,6 +31,7 @@
 ### DR — Documentation & Reference
 
 - `009-DR-GUID-contribution-workflow.md` — Step-by-step contributor guide
+- `030-DR-GUID-import-conversion-recipes.md` — How to import from Obsidian, Notion, Google Docs, Confluence, etc.
 
 ### WA — Workflows & Automation
 
@@ -92,5 +93,6 @@
 | 027 | OD-OPSM | edge-daemon-runbook         | edge-daemon operations runbook |
 | 028 | OD-SECU | release-signing             | Release supply-chain signing   |
 | 029 | OD-RELS | npm-publishing-strategy     | npm publishing strategy        |
+| 030 | DR-GUID | import-conversion-recipes   | Import from various sources    |
 
-## Next Available Sequence: 030
+## Next Available Sequence: 031
