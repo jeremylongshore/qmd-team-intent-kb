@@ -21,8 +21,12 @@ export const MemoryCandidate = z.object({
   trustLevel: TrustLevel.default('medium'),
   author: Author,
   tenantId: TenantId,
-  metadata: ContentMetadata.default({}),
-  prePolicyFlags: PrePolicyFlags.default({}),
+  metadata: ContentMetadata.default({ filePaths: [], tags: [] }),
+  prePolicyFlags: PrePolicyFlags.default({
+    potentialSecret: false,
+    lowConfidence: false,
+    duplicateSuspect: false,
+  }),
   capturedAt: IsoDatetime,
 });
 export type MemoryCandidate = z.infer<typeof MemoryCandidate>;
