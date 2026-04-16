@@ -4,7 +4,7 @@ import {
   AuditEvent as AuditEventSchema,
 } from '@qmd-team-intent-kb/schema';
 import type { MemoryCandidate, CuratedMemory, PolicyEvaluation } from '@qmd-team-intent-kb/schema';
-import type { MemoryRepository, AuditRepository } from '@qmd-team-intent-kb/store';
+import type { MemoryRepository, AuditRepository, MemoryLinksRepository } from '@qmd-team-intent-kb/store';
 import type { PipelineResult } from '@qmd-team-intent-kb/policy-engine';
 import type { SupersessionMatch } from '../supersession/supersession-detector.js';
 
@@ -37,6 +37,7 @@ export function promote(
   memoryRepo: MemoryRepository,
   auditRepo: AuditRepository,
   dryRun: boolean = false,
+  linksRepo?: MemoryLinksRepository,
 ): CuratedMemory {
   const now = new Date().toISOString();
   const memoryId = randomUUID();
@@ -103,9 +104,24 @@ export function promote(
           timestamp: now,
         }),
       );
+
     }
 
     memoryRepo.insert(memory);
+
+    if (input.supersession !== undefined && linksRepo) {
+      linksRepo.insert({
+        id: randomUUID(),
+        sourceMemoryId: memoryId,
+        targetMemoryId: input.supersession.supersededMemoryId,
+        linkType: 'supersedes',
+        weight: input.supersession.similarity,
+        createdBy: 'curator',
+        source: 'curator',
+        importBatchId: null,
+        createdAt: now,
+      });
+    }
 
     auditRepo.insert(
       AuditEventSchema.parse({

@@ -7,6 +7,7 @@ import type {
   MemoryRepository,
   PolicyRepository,
   AuditRepository,
+  MemoryLinksRepository,
 } from '@qmd-team-intent-kb/store';
 import type { CuratorConfig, CurationResult, CurationBatchResult } from './types.js';
 import { checkDuplicate } from './dedup/dedup-checker.js';
@@ -20,6 +21,7 @@ export interface CuratorDependencies {
   memoryRepo: MemoryRepository;
   policyRepo: PolicyRepository;
   auditRepo: AuditRepository;
+  linksRepo?: MemoryLinksRepository;
 }
 
 /**
@@ -177,6 +179,7 @@ export class Curator {
       this.deps.memoryRepo,
       this.deps.auditRepo,
       this.config.dryRun,
+      this.deps.linksRepo,
     );
 
     return {
