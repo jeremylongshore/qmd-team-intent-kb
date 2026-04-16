@@ -6,6 +6,8 @@ import {
   MemoryRepository,
   PolicyRepository,
   AuditRepository,
+  ImportBatchRepository,
+  MemoryLinksRepository,
 } from '@qmd-team-intent-kb/store';
 import { CandidateService } from './services/candidate-service.js';
 import { MemoryService } from './services/memory-service.js';
@@ -18,6 +20,8 @@ import { registerPolicyRoutes } from './routes/policies.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerAuditRoutes } from './routes/audit.js';
 import { registerSearchRoutes } from './routes/search.js';
+import { registerImportRoutes } from './routes/import.js';
+import { ImportService } from './services/import-service.js';
 import { registerRateLimiter } from './middleware/rate-limiter.js';
 import { registerApiKeyAuth } from './middleware/api-key-auth.js';
 import { registerInputSanitizer } from './middleware/input-sanitizer.js';
@@ -62,12 +66,15 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   const memoryRepo = new MemoryRepository(deps.db);
   const policyRepo = new PolicyRepository(deps.db);
   const auditRepo = new AuditRepository(deps.db);
+  const batchRepo = new ImportBatchRepository(deps.db);
+  const linksRepo = new MemoryLinksRepository(deps.db);
 
   const candidateService = new CandidateService(candidateRepo);
   const memoryService = new MemoryService(memoryRepo, auditRepo);
   const policyService = new PolicyService(policyRepo);
   const healthService = new HealthService(deps.db);
   const searchService = new SearchService(memoryRepo);
+  const importService = new ImportService(candidateRepo, memoryRepo, batchRepo, linksRepo);
 
   // Routes are wrapped in an inner register() so they load AFTER the
   // @fastify/swagger plugin. The swagger plugin installs an `onRoute`
@@ -80,6 +87,7 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
     registerPolicyRoutes(scope, policyService);
     registerAuditRoutes(scope, auditRepo);
     registerSearchRoutes(scope, searchService);
+    registerImportRoutes(scope, importService);
   });
 
   return app;

@@ -96,17 +96,20 @@ export class CandidateRepository {
   private readonly stmtFindByHash: Database.Statement;
   private readonly stmtCount: Database.Statement;
   private readonly stmtCountByTenant: Database.Statement;
+  private readonly stmtDeleteByBatch: Database.Statement;
 
   constructor(db: Database.Database) {
     this.stmtInsert = db.prepare(`
       INSERT INTO candidates (
         id, status, source, content, title, category,
         trust_level, author_json, tenant_id,
-        metadata_json, pre_policy_flags_json, content_hash, captured_at
+        metadata_json, pre_policy_flags_json, content_hash, captured_at,
+        import_batch_id
       ) VALUES (
         @id, @status, @source, @content, @title, @category,
         @trust_level, @author_json, @tenant_id,
-        @metadata_json, @pre_policy_flags_json, @content_hash, @captured_at
+        @metadata_json, @pre_policy_flags_json, @content_hash, @captured_at,
+        @import_batch_id
       )
     `);
 
@@ -129,10 +132,14 @@ export class CandidateRepository {
     this.stmtCountByTenant = db.prepare(`
       SELECT tenant_id, COUNT(*) as cnt FROM candidates GROUP BY tenant_id
     `);
+
+    this.stmtDeleteByBatch = db.prepare(`
+      DELETE FROM candidates WHERE import_batch_id = ?
+    `);
   }
 
   /** Insert a new candidate. The contentHash must be provided by the caller. */
-  insert(candidate: MemoryCandidate, contentHash: string): void {
+  insert(candidate: MemoryCandidate, contentHash: string, importBatchId?: string): void {
     this.stmtInsert.run({
       id: candidate.id,
       status: candidate.status,
@@ -147,6 +154,7 @@ export class CandidateRepository {
       pre_policy_flags_json: JSON.stringify(candidate.prePolicyFlags),
       content_hash: contentHash,
       captured_at: candidate.capturedAt,
+      import_batch_id: importBatchId ?? null,
     });
   }
 
@@ -175,6 +183,11 @@ export class CandidateRepository {
   count(): number {
     const result = this.stmtCount.get() as { cnt: number };
     return result.cnt;
+  }
+
+  /** Delete all candidates associated with an import batch. Returns count deleted. */
+  deleteByBatch(batchId: string): number {
+    return this.stmtDeleteByBatch.run(batchId).changes;
   }
 
   /** Count candidates grouped by tenant */

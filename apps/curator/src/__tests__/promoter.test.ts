@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { createTestDatabase, MemoryRepository, AuditRepository } from '@qmd-team-intent-kb/store';
+import {
+  createTestDatabase,
+  MemoryRepository,
+  AuditRepository,
+  MemoryLinksRepository,
+} from '@qmd-team-intent-kb/store';
 import { computeContentHash } from '@qmd-team-intent-kb/common';
 import type { PipelineResult } from '@qmd-team-intent-kb/policy-engine';
 import { promote } from '../promotion/promoter.js';
@@ -233,6 +238,44 @@ describe('promote', () => {
       auditRepo,
     );
     expect(memory.supersession).toBeUndefined();
+  });
+
+  it('persists a supersedes graph edge when linksRepo is provided', () => {
+    const db = createTestDatabase();
+    const mRepo = new MemoryRepository(db);
+    const aRepo = new AuditRepository(db);
+    const lRepo = new MemoryLinksRepository(db);
+
+    const old = makeCuratedMemory({ title: 'Error handling guide', category: 'convention' });
+    mRepo.insert(old);
+
+    const candidate = makeCandidate({
+      title: 'Error handling guide updated',
+      category: 'convention',
+    });
+    const contentHash = computeContentHash(candidate.content);
+    const supersession = {
+      supersededMemoryId: old.id,
+      supersededTitle: old.title,
+      similarity: 0.75,
+    };
+
+    const memory = promote(
+      { candidate, contentHash, pipelineResult: makePipelineResult(), supersession },
+      mRepo,
+      aRepo,
+      false,
+      lRepo,
+    );
+
+    const links = lRepo.findBySource(memory.id);
+    expect(links).toHaveLength(1);
+    expect(links[0]!.targetMemoryId).toBe(old.id);
+    expect(links[0]!.linkType).toBe('supersedes');
+    expect(links[0]!.weight).toBe(0.75);
+    expect(links[0]!.source).toBe('curator');
+
+    db.close();
   });
 
   // Additional: promotion timestamp is set
