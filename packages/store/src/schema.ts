@@ -168,4 +168,41 @@ AFTER UPDATE ON curated_memories BEGIN
 END;
     `.trim(),
   },
+  {
+    version: 3,
+    name: 'add_memory_links_and_import_batches',
+    sql: `
+CREATE TABLE IF NOT EXISTS memory_links (
+  id TEXT PRIMARY KEY,
+  source_memory_id TEXT NOT NULL REFERENCES curated_memories(id),
+  target_memory_id TEXT NOT NULL REFERENCES curated_memories(id),
+  link_type TEXT NOT NULL,
+  weight REAL NOT NULL DEFAULT 1.0,
+  created_by TEXT NOT NULL,
+  source TEXT NOT NULL,
+  import_batch_id TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(source_memory_id, target_memory_id, link_type)
+);
+CREATE INDEX IF NOT EXISTS idx_links_source ON memory_links(source_memory_id);
+CREATE INDEX IF NOT EXISTS idx_links_target ON memory_links(target_memory_id);
+CREATE INDEX IF NOT EXISTS idx_links_type ON memory_links(link_type);
+CREATE INDEX IF NOT EXISTS idx_links_batch ON memory_links(import_batch_id);
+
+CREATE TABLE IF NOT EXISTS import_batches (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  source_path TEXT,
+  file_count INTEGER NOT NULL DEFAULT 0,
+  created_count INTEGER NOT NULL DEFAULT 0,
+  rejected_count INTEGER NOT NULL DEFAULT 0,
+  skipped_count INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  rolled_back_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_batches_tenant ON import_batches(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_batches_status ON import_batches(status);
+    `.trim(),
+  },
 ];

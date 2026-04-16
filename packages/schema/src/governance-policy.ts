@@ -9,7 +9,7 @@ export const PolicyRule = z.object({
   action: PolicyRuleAction,
   enabled: z.boolean().default(true),
   priority: z.number().int().min(0).default(0),
-  parameters: z.record(z.unknown()).default({}),
+  parameters: z.record(z.string(), z.unknown()).default({}),
   description: z.string().optional(),
 });
 export type PolicyRule = z.infer<typeof PolicyRule>;

@@ -10,7 +10,7 @@ export const AuditEvent = z.object({
   tenantId: TenantId,
   actor: Author,
   reason: NonEmptyString.optional(),
-  details: z.record(z.unknown()).default({}),
+  details: z.record(z.string(), z.unknown()).default({}),
   timestamp: IsoDatetime,
 });
 export type AuditEvent = z.infer<typeof AuditEvent>;

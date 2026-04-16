@@ -12,6 +12,9 @@ import {
   Confidence,
   Sensitivity,
   AuthorType,
+  LinkType,
+  LinkSource,
+  ImportBatchStatus,
 } from '../enums.js';
 
 describe('MemorySource', () => {
@@ -158,5 +161,35 @@ describe('AuthorType', () => {
   });
   it('rejects invalid value', () => {
     expect(() => AuthorType.parse('bot')).toThrow();
+  });
+});
+
+describe('LinkType', () => {
+  it.each(['relates_to', 'supersedes', 'contradicts', 'depends_on', 'part_of'])(
+    'accepts "%s"',
+    (val) => {
+      expect(LinkType.parse(val)).toBe(val);
+    },
+  );
+  it('rejects invalid value', () => {
+    expect(() => LinkType.parse('follows')).toThrow();
+  });
+});
+
+describe('LinkSource', () => {
+  it.each(['curator', 'import', 'manual', 'mcp'])('accepts "%s"', (val) => {
+    expect(LinkSource.parse(val)).toBe(val);
+  });
+  it('rejects invalid value', () => {
+    expect(() => LinkSource.parse('api')).toThrow();
+  });
+});
+
+describe('ImportBatchStatus', () => {
+  it.each(['active', 'completed', 'rolled_back'])('accepts "%s"', (val) => {
+    expect(ImportBatchStatus.parse(val)).toBe(val);
+  });
+  it('rejects invalid value', () => {
+    expect(() => ImportBatchStatus.parse('pending')).toThrow();
   });
 });

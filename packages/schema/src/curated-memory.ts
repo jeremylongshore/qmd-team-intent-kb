@@ -47,7 +47,7 @@ export const CuratedMemory = z
     sensitivity: Sensitivity.default('internal'),
     author: Author,
     tenantId: TenantId,
-    metadata: ContentMetadata.default({}),
+    metadata: ContentMetadata.default({ filePaths: [], tags: [] }),
     lifecycle: MemoryLifecycleState,
     contentHash: Sha256Hash,
     policyEvaluations: z.array(PolicyEvaluation).default([]),

@@ -161,6 +161,103 @@ describe('FTS5 virtual table after migrations', () => {
   });
 });
 
+describe('memory_links and import_batches tables after migration 3', () => {
+  it('memory_links table exists', () => {
+    const db = createTestDatabase();
+    try {
+      const row = db
+        .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='memory_links'`)
+        .get() as { name: string } | undefined;
+      expect(row).toBeDefined();
+      expect(row?.name).toBe('memory_links');
+    } finally {
+      db.close();
+    }
+  });
+
+  it('import_batches table exists', () => {
+    const db = createTestDatabase();
+    try {
+      const row = db
+        .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='import_batches'`)
+        .get() as { name: string } | undefined;
+      expect(row).toBeDefined();
+      expect(row?.name).toBe('import_batches');
+    } finally {
+      db.close();
+    }
+  });
+
+  it('memory_links unique constraint enforced', () => {
+    const db = createTestDatabase();
+    try {
+      // Insert two curated memories to link
+      const hash = 'a'.repeat(64);
+      for (const id of ['m1', 'm2']) {
+        db.prepare(
+          `INSERT INTO curated_memories (
+            id, candidate_id, source, content, title, category,
+            trust_level, sensitivity, author_json, tenant_id,
+            metadata_json, lifecycle, content_hash,
+            policy_evaluations_json, promoted_at, promoted_by_json, updated_at, version
+          ) VALUES (?, ?, 'manual', 'c', 't', 'pattern', 'high', 'internal',
+            '{"type":"ai","id":"c1"}', 'tenant-1', '{}', 'active', ?,
+            '[]', datetime('now'), '{"type":"system","id":"s1"}', datetime('now'), 1)`,
+        ).run(id, `cand-${id}`, hash);
+      }
+
+      db.prepare(
+        `INSERT INTO memory_links (id, source_memory_id, target_memory_id, link_type, created_by, source)
+         VALUES ('link-1', 'm1', 'm2', 'relates_to', 'test', 'manual')`,
+      ).run();
+
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO memory_links (id, source_memory_id, target_memory_id, link_type, created_by, source)
+             VALUES ('link-2', 'm1', 'm2', 'relates_to', 'test', 'manual')`,
+          )
+          .run(),
+      ).toThrow();
+    } finally {
+      db.close();
+    }
+  });
+
+  it('memory_links indexes exist', () => {
+    const db = createTestDatabase();
+    try {
+      for (const name of [
+        'idx_links_source',
+        'idx_links_target',
+        'idx_links_type',
+        'idx_links_batch',
+      ]) {
+        const row = db
+          .prepare(`SELECT name FROM sqlite_master WHERE type='index' AND name=?`)
+          .get(name) as { name: string } | undefined;
+        expect(row, `index ${name} should exist`).toBeDefined();
+      }
+    } finally {
+      db.close();
+    }
+  });
+
+  it('import_batches indexes exist', () => {
+    const db = createTestDatabase();
+    try {
+      for (const name of ['idx_batches_tenant', 'idx_batches_status']) {
+        const row = db
+          .prepare(`SELECT name FROM sqlite_master WHERE type='index' AND name=?`)
+          .get(name) as { name: string } | undefined;
+        expect(row, `index ${name} should exist`).toBeDefined();
+      }
+    } finally {
+      db.close();
+    }
+  });
+});
+
 describe('compound indexes after migrations', () => {
   it('idx_memories_tenant_lifecycle index exists', () => {
     const db = createTestDatabase();

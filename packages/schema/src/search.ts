@@ -17,7 +17,7 @@ export const SearchQuery = z.object({
   categories: z.array(MemoryCategory).optional(),
   dateFrom: IsoDatetime.optional(),
   dateTo: IsoDatetime.optional(),
-  pagination: Pagination.default({}),
+  pagination: Pagination.default({ page: 1, pageSize: 20 }),
 });
 export type SearchQuery = z.infer<typeof SearchQuery>;
 
