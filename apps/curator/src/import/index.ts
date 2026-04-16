@@ -12,3 +12,5 @@ export type {
   ImportDependencies,
   RollbackResult,
 } from './import-pipeline.js';
+export { extractWikiLinks, resolveWikiLinks } from './wikilink-parser.js';
+export type { WikiLink, ResolvedLink, WikiLinkResolutionResult } from './wikilink-parser.js';

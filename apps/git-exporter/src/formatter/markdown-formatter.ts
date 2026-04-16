@@ -1,8 +1,15 @@
 import type { CuratedMemory } from '@qmd-team-intent-kb/schema';
 import { extractFrontmatter, renderFrontmatter } from './frontmatter.js';
 
+/** Optional callback to resolve wiki-links in content before export */
+export type LinkResolver = (content: string) => string;
+
 /**
  * Format a CuratedMemory as a full Markdown document with YAML frontmatter.
+ *
+ * When a `resolveLinks` callback is provided, wiki-links in the content
+ * are resolved before rendering. Unresolved links pass through as literal
+ * `[[slug]]` text.
  *
  * Structure:
  * ```
@@ -15,9 +22,10 @@ import { extractFrontmatter, renderFrontmatter } from './frontmatter.js';
  * <content>
  * ```
  */
-export function formatMemoryAsMarkdown(memory: CuratedMemory): string {
+export function formatMemoryAsMarkdown(memory: CuratedMemory, resolveLinks?: LinkResolver): string {
   const frontmatter = renderFrontmatter(extractFrontmatter(memory));
-  return `${frontmatter}\n\n# ${memory.title}\n\n${memory.content}\n`;
+  const content = resolveLinks ? resolveLinks(memory.content) : memory.content;
+  return `${frontmatter}\n\n# ${memory.title}\n\n${content}\n`;
 }
 
 /**

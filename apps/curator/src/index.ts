@@ -14,7 +14,14 @@ export type { PromotionInput } from './promotion/promoter.js';
 export { reject } from './rejection/rejector.js';
 export { parseMarkdown, titleFromPath, walkVault, countVaultFiles } from './import/index.js';
 export type { ParsedMarkdown, VaultFile } from './import/index.js';
-export { detectCollision, previewImport, executeImport, rollbackImport } from './import/index.js';
+export {
+  detectCollision,
+  previewImport,
+  executeImport,
+  rollbackImport,
+  extractWikiLinks,
+  resolveWikiLinks,
+} from './import/index.js';
 export type {
   CollisionResult,
   CollisionTarget,

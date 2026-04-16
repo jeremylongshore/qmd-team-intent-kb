@@ -8,6 +8,7 @@ import { getStatus } from './tools/status.js';
 import { applyTransition } from './tools/transition.js';
 import { runSync, isQmdAvailable } from './tools/sync.js';
 import { vaultPreview, vaultExecute, vaultRollback } from './tools/vault-import.js';
+import { createDatabase, MemoryLinksRepository } from '@qmd-team-intent-kb/store';
 
 const VERSION = '0.1.0';
 
@@ -205,6 +206,29 @@ export function createServer(
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // teamkb_neighbors — get linked memories for a given memory
+  // -------------------------------------------------------------------------
+  server.tool(
+    'teamkb_neighbors',
+    'Return all memories linked to the given memory (both directions). Shows link types, weights, and direction (outgoing/incoming). Useful for exploring the knowledge graph from a specific node.',
+    {
+      memoryId: z.string().uuid().describe('UUID of the curated memory to find neighbors for'),
+    },
+    async (params) => {
+      const db = createDatabase({ path: config.dbPath });
+      try {
+        const linksRepo = new MemoryLinksRepository(db);
+        const neighbors = linksRepo.neighbors(params.memoryId);
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(neighbors, null, 2) }],
+        };
+      } finally {
+        db.close();
+      }
     },
   );
 
