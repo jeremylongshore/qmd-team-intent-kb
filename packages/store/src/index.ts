@@ -7,3 +7,7 @@ export { PolicyRepository } from './repositories/policy-repository.js';
 export { AuditRepository } from './repositories/audit-repository.js';
 export { ExportStateRepository } from './repositories/export-state-repository.js';
 export type { ExportState } from './repositories/export-state-repository.js';
+export { MemoryLinksRepository } from './repositories/memory-links-repository.js';
+export type { MemoryLink, Neighbor, GraphNode } from './repositories/memory-links-repository.js';
+export { ImportBatchRepository } from './repositories/import-batch-repository.js';
+export type { ImportBatch } from './repositories/import-batch-repository.js';
