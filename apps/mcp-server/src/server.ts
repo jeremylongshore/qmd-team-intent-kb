@@ -7,6 +7,7 @@ import { importFiles } from './tools/import.js';
 import { getStatus } from './tools/status.js';
 import { applyTransition } from './tools/transition.js';
 import { runSync, isQmdAvailable } from './tools/sync.js';
+import { vaultPreview, vaultExecute, vaultRollback } from './tools/vault-import.js';
 
 const VERSION = '0.1.0';
 
@@ -138,6 +139,71 @@ export function createServer(
             text: JSON.stringify(result, null, 2),
           },
         ],
+      };
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // teamkb_vault_preview — dry-run vault import analysis
+  // -------------------------------------------------------------------------
+  server.tool(
+    'teamkb_vault_preview',
+    'Preview a vault directory import without persisting. Reports file counts, collisions, and what would be created.',
+    {
+      sourcePath: z.string().min(1).describe('Absolute path to the vault/directory to import'),
+      excludeDirs: z
+        .array(z.string())
+        .optional()
+        .describe('Additional directory names to exclude (beyond .obsidian, .trash, .git)'),
+    },
+    async (params) => {
+      const result = await vaultPreview(
+        { sourcePath: params.sourcePath, excludeDirs: params.excludeDirs },
+        config,
+      );
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+      };
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // teamkb_vault_import — execute vault import with batch tracking
+  // -------------------------------------------------------------------------
+  server.tool(
+    'teamkb_vault_import',
+    'Import a vault directory as memory candidates with batch tracking. Parses Markdown frontmatter, detects collisions, creates candidates. Excludes .obsidian/.trash/.git by default.',
+    {
+      sourcePath: z.string().min(1).describe('Absolute path to the vault/directory to import'),
+      excludeDirs: z
+        .array(z.string())
+        .optional()
+        .describe('Additional directory names to exclude (beyond .obsidian, .trash, .git)'),
+    },
+    async (params) => {
+      const result = await vaultExecute(
+        { sourcePath: params.sourcePath, excludeDirs: params.excludeDirs },
+        config,
+      );
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+      };
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // teamkb_vault_rollback — roll back an import batch
+  // -------------------------------------------------------------------------
+  server.tool(
+    'teamkb_vault_rollback',
+    'Roll back a vault import batch. Deletes all candidates created by the batch, removes associated memory links, and marks the batch as rolled_back.',
+    {
+      batchId: z.string().min(1).describe('UUID of the import batch to roll back'),
+    },
+    async (params) => {
+      const result = vaultRollback({ batchId: params.batchId }, config);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };
     },
   );

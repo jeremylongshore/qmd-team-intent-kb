@@ -28,6 +28,7 @@
     "@qmd-team-intent-kb/common": "workspace:*",
     "@qmd-team-intent-kb/schema": "workspace:*",
     "@qmd-team-intent-kb/store": "workspace:*",
+    "@qmd-team-intent-kb/curator": "workspace:*",
     "fast-glob": "^3.3.3"
   },
   "devDependencies": {
