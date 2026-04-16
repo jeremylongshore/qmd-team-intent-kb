@@ -10,7 +10,7 @@ import {
   ImportBatchRepository,
 } from '@qmd-team-intent-kb/store';
 import { computeContentHash } from '@qmd-team-intent-kb/common';
-import { previewImport, executeImport } from '../import/import-pipeline.js';
+import { previewImport, executeImport, rollbackImport } from '../import/import-pipeline.js';
 import type { ImportDependencies } from '../import/import-pipeline.js';
 import { makeCuratedMemory } from './fixtures.js';
 
@@ -212,5 +212,65 @@ describe('executeImport', () => {
     const candidate = deps.candidateRepo.findById(result.files[0]!.candidateId!)!;
     expect(candidate.content).toBe('Just the body');
     expect(candidate.content).not.toContain('---');
+  });
+});
+
+describe('rollbackImport', () => {
+  let db: Database.Database;
+  let deps: ImportDependencies;
+  let vaultDir: string;
+
+  beforeEach(() => {
+    db = createTestDatabase();
+    deps = setupDeps(db);
+    vaultDir = mkdtempSync(join(tmpdir(), 'import-rollback-'));
+  });
+
+  afterEach(() => {
+    db.close();
+    rmSync(vaultDir, { recursive: true, force: true });
+  });
+
+  function writeVault(relativePath: string, content: string): void {
+    const fullPath = join(vaultDir, relativePath);
+    mkdirSync(fullPath.split('/').slice(0, -1).join('/'), { recursive: true });
+    writeFileSync(fullPath, content, 'utf8');
+  }
+
+  it('deletes candidates created by the batch', async () => {
+    writeVault('note1.md', 'Content one');
+    writeVault('note2.md', 'Content two');
+
+    const importResult = await executeImport(vaultDir, TENANT, deps, undefined, () => NOW);
+    expect(deps.candidateRepo.count()).toBe(2);
+
+    const rollbackResult = rollbackImport(importResult.batchId, deps, undefined, () => NOW);
+    expect(rollbackResult.candidatesDeleted).toBe(2);
+    expect(deps.candidateRepo.count()).toBe(0);
+  });
+
+  it('marks batch as rolled_back', async () => {
+    writeVault('note.md', 'Content');
+
+    const importResult = await executeImport(vaultDir, TENANT, deps, undefined, () => NOW);
+    rollbackImport(importResult.batchId, deps, undefined, () => NOW);
+
+    const batch = deps.batchRepo.findById(importResult.batchId)!;
+    expect(batch.status).toBe('rolled_back');
+    expect(batch.rolledBackAt).toBe(NOW);
+  });
+
+  it('throws for non-existent batch', () => {
+    expect(() => rollbackImport('non-existent', deps)).toThrow('Import batch not found');
+  });
+
+  it('throws for already rolled-back batch', async () => {
+    writeVault('note.md', 'Content');
+    const importResult = await executeImport(vaultDir, TENANT, deps, undefined, () => NOW);
+    rollbackImport(importResult.batchId, deps, undefined, () => NOW);
+
+    expect(() => rollbackImport(importResult.batchId, deps, undefined, () => NOW)).toThrow(
+      'already rolled back',
+    );
   });
 });

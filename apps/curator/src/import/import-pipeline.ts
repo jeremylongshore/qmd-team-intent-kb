@@ -5,6 +5,7 @@ import type {
   MemoryRepository,
   ImportBatchRepository,
   ImportBatch,
+  MemoryLinksRepository,
 } from '@qmd-team-intent-kb/store';
 import { walkVault } from './vault-walker.js';
 import { parseMarkdown, titleFromPath } from './markdown-parser.js';
@@ -211,7 +212,7 @@ export async function executeImport(
     };
 
     try {
-      deps.candidateRepo.insert(candidate, collision.contentHash);
+      deps.candidateRepo.insert(candidate, collision.contentHash, batchId);
       batchHashes.add(collision.contentHash);
       files.push({ relativePath: vf.relativePath, status: 'created', candidateId });
       createdCount++;
@@ -243,4 +244,36 @@ export async function executeImport(
     skippedCount,
     files,
   };
+}
+
+/** Result of a batch rollback */
+export interface RollbackResult {
+  batchId: string;
+  candidatesDeleted: number;
+  linksDeleted: number;
+}
+
+/**
+ * Roll back an import batch: delete all candidates created by the batch,
+ * delete associated memory links, and mark the batch as rolled_back.
+ */
+export function rollbackImport(
+  batchId: string,
+  deps: ImportDependencies,
+  linksRepo?: MemoryLinksRepository,
+  nowFn: () => string = () => new Date().toISOString(),
+): RollbackResult {
+  const batch = deps.batchRepo.findById(batchId);
+  if (!batch) {
+    throw new Error(`Import batch not found: ${batchId}`);
+  }
+  if (batch.status === 'rolled_back') {
+    throw new Error(`Import batch already rolled back: ${batchId}`);
+  }
+
+  const candidatesDeleted = deps.candidateRepo.deleteByBatch(batchId);
+  const linksDeleted = linksRepo ? linksRepo.deleteByBatch(batchId) : 0;
+  deps.batchRepo.rollback(batchId, nowFn());
+
+  return { batchId, candidatesDeleted, linksDeleted };
 }

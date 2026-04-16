@@ -205,4 +205,12 @@ CREATE INDEX IF NOT EXISTS idx_batches_tenant ON import_batches(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_batches_status ON import_batches(status);
     `.trim(),
   },
+  {
+    version: 4,
+    name: 'add_import_batch_id_to_candidates',
+    sql: `
+ALTER TABLE candidates ADD COLUMN import_batch_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_candidates_batch ON candidates(import_batch_id);
+    `.trim(),
+  },
 ];
