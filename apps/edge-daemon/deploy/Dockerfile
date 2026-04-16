@@ -39,6 +39,7 @@ COPY packages/policy-engine/package.json  packages/policy-engine/
 COPY packages/claude-runtime/package.json packages/claude-runtime/
 COPY packages/qmd-adapter/package.json    packages/qmd-adapter/
 COPY packages/repo-resolver/package.json  packages/repo-resolver/
+COPY packages/test-fixtures/package.json  packages/test-fixtures/
 
 # Install all workspace deps (frozen; fails if lockfile is stale).
 RUN pnpm install --frozen-lockfile
