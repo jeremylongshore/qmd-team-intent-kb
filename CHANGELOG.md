@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Authenticated `GET /api/audit/receipt-tip` exposes the content-safe global governance-receipt chain head and can resolve a previously observed SHA-256 tip after the chain advances. It verifies the chain before answering, fails closed on tamper signatures, reports legacy unverified rows and benign ordering forks separately, and does not claim to identify the exact search results an agent read. This completes the registrar half of AGP's `gsb_receipt_tip_hash` pointer contract.
+- Authenticated `GET /api/audit/receipt-tip` exposes the content-safe global governance-receipt chain head and can resolve a previously observed SHA-256 tip after the chain advances. It verifies the chain before answering, fails closed on tamper signatures, reports legacy unverified rows and benign ordering forks separately, and does not claim to identify the exact search results an agent read. This completes the registrar half of AGP's `gsb_receipt_tip_hash` pointer contract. The chain-boundary documentation now also names the canonical shared spool at `~/.teamkb/spool` rather than the retired `brain/spool` location.
 
 - **Receipted governance-policy upgrade (`curator-cli upgrade-policy`, epic
   `qmd-team-intent-kb-5bm.2`).** New `curator-cli upgrade-policy --tenant <id> [--db] [--dry-run]

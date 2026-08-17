@@ -56,7 +56,7 @@ export interface AuditChainRow {
 export interface AuditChainPosition {
   entryHash: string;
   sequence: number;
-  hashVersion: AuditHashVersion;
+  hashVersion: number;
 }
 
 interface AuditChainPositionRow {
@@ -69,7 +69,10 @@ function rowToChainPosition(row: AuditChainPositionRow): AuditChainPosition {
   return {
     entryHash: row.entry_hash,
     sequence: row.seq,
-    hashVersion: row.hash_version === 2 ? 2 : 1,
+    // NULL predates the version column and therefore means v1. Preserve any
+    // future explicit value so this public pointer surface never launders an
+    // unknown version into a known one.
+    hashVersion: row.hash_version ?? 1,
   };
 }
 
