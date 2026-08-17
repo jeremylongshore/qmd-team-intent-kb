@@ -52,6 +52,27 @@ export interface AuditChainRow {
   hash_version: number | null;
 }
 
+/** Content-safe position of one hash in the global governance receipt chain. */
+export interface AuditChainPosition {
+  entryHash: string;
+  sequence: number;
+  hashVersion: AuditHashVersion;
+}
+
+interface AuditChainPositionRow {
+  entry_hash: string;
+  seq: number;
+  hash_version: number | null;
+}
+
+function rowToChainPosition(row: AuditChainPositionRow): AuditChainPosition {
+  return {
+    entryHash: row.entry_hash,
+    sequence: row.seq,
+    hashVersion: row.hash_version === 2 ? 2 : 1,
+  };
+}
+
 /**
  * Parse a raw SQLite row into a validated AuditEvent domain object.
  * Throws a descriptive error if the row fails validation.
@@ -127,6 +148,8 @@ export class AuditRepository {
   private readonly stmtFindInRange: Database.Statement;
   private readonly stmtCountByTenantAndAction: Database.Statement;
   private readonly stmtLastHash: Database.Statement;
+  private readonly stmtFindChainTip: Database.Statement;
+  private readonly stmtFindChainPosition: Database.Statement;
   private readonly stmtFindAllChronological: Database.Statement;
   /** Atomic (BEGIN IMMEDIATE) prev-read + INSERT — see the constructor. */
   private readonly appendTxn: Database.Transaction<(p: AppendParams) => void>;
@@ -158,6 +181,20 @@ export class AuditRepository {
       SELECT entry_hash FROM audit_events
       WHERE entry_hash IS NOT NULL
       ORDER BY seq DESC
+      LIMIT 1
+    `);
+
+    // Content-safe receipt-pointer reads. These expose only the chain hash and
+    // write-order position — never tenant, actor, reason, or memory content.
+    this.stmtFindChainTip = db.prepare(`
+      SELECT entry_hash, seq, hash_version FROM audit_events
+      WHERE entry_hash IS NOT NULL
+      ORDER BY seq DESC
+      LIMIT 1
+    `);
+    this.stmtFindChainPosition = db.prepare(`
+      SELECT entry_hash, seq, hash_version FROM audit_events
+      WHERE entry_hash = ?
       LIMIT 1
     `);
 
@@ -280,6 +317,18 @@ export class AuditRepository {
    */
   findAllChronological(): AuditChainRow[] {
     return this.stmtFindAllChronological.all() as AuditChainRow[];
+  }
+
+  /** Return the current global governance-receipt chain tip, or null for an empty chain. */
+  findChainTip(): AuditChainPosition | null {
+    const row = this.stmtFindChainTip.get() as AuditChainPositionRow | undefined;
+    return row === undefined ? null : rowToChainPosition(row);
+  }
+
+  /** Resolve a previously observed receipt hash to its stable chain position. */
+  findChainPosition(entryHash: string): AuditChainPosition | null {
+    const row = this.stmtFindChainPosition.get(entryHash) as AuditChainPositionRow | undefined;
+    return row === undefined ? null : rowToChainPosition(row);
   }
 
   /**
